@@ -7,3 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+pixels = "0.2.0"
+# We also need "winit" to open a window and get a drawing context
+winit = "0.22.0"
+# This crate makes dealing with winit nicer
+winit_input_helper = "0.6.0"
