@@ -17,8 +17,8 @@ use winit_input_helper::WinitInputHelper;
 const DT: f64 = 1.0 / 60.0;
 
 const DEPTH: usize = 4;
-const WIDTH: usize = 320;
-const HEIGHT: usize = 240;
+const WIDTH: usize = 800;
+const HEIGHT: usize = 500;
 const PITCH: usize = WIDTH * DEPTH;
 
 // We'll make our Color type an RGBA8888 pixel.
@@ -26,7 +26,7 @@ type Color = [u8; DEPTH];
 
 const CLEAR_COL: Color = [32, 32, 64, 255];
 const WALL_COL: Color = [200, 200, 200, 255];
-const PLAYER_COL: Color = [255, 128, 128, 255];
+const PLAYER_COL: Color = [255, 255, 0, 255];
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct Rect {
