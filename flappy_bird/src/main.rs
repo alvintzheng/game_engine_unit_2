@@ -164,10 +164,17 @@ fn restitute(statics: &[Wall], dynamics: &mut [Mobile], contacts: &mut [Contact]
         //just make a move cause its dynamic for sure
         match contact.a {
             ColliderID::Static(_) => {
-                println!("uh");
+                println!("uhh");
+
             }
             ColliderID::Dynamic(index_a) => match contact.b {
-                ColliderID::Dynamic(_) => println!("uh"),
+                ColliderID::Dynamic(_) => {
+                    println!("GAME OVER");
+
+                    //put in a trigger to call this in main to kill program or bring to new page
+                    //*control_flow = ControlFlow::Exit;
+                    return;
+                }
                 ColliderID::Static(index_b) => {
                     let obj_a = &mut dynamics[index_a];
                     let obj_b = &statics[index_b];
@@ -219,13 +226,27 @@ fn main() {
     let mut player = Mobile {
         rect: Rect {
             x: 32,
-            y: HEIGHT as i32 - 16 - 8,
-            w: 8,
-            h: 8,
+            //y: HEIGHT as i32 - 16 - 16,
+            //player drops from ceiling
+            y: 16 + 16 + 16,
+            w: 16,
+            h: 16,
         },
         vx: 0,
         vy: 0,
     };
+    //mobile obstacle
+    let mut mover = Mobile {
+        rect: Rect {
+            x: WIDTH as i32 - 100 - 16,
+            y: HEIGHT as i32 - 100 - 16,
+            w: 50,
+            h: 50,
+        },
+        vx: -2,
+        vy: 0,
+    };
+
     let walls = [
         Wall {
             rect: Rect {
@@ -259,12 +280,41 @@ fn main() {
                 h: 16,
             },
         },
+        //stationary obstacles to begin with - to be replaced by PCG obstacles
+        //obstacle 1
         Wall {
             rect: Rect {
                 x: WIDTH as i32 / 2 - 16,
                 y: HEIGHT as i32 / 2 - 16,
                 w: 32,
                 h: 32,
+            },
+        },
+        //obstacle 2
+        Wall {
+            rect: Rect {
+                x: WIDTH as i32 / 8 - 16,
+                y: HEIGHT as i32 / 8 - 16,
+                w: 250,
+                h: 200,
+            },
+        },
+        //obstacle 3
+        Wall {
+            rect: Rect {
+                x: WIDTH as i32 / 3 * 2 - 16,
+                y: HEIGHT as i32 / 3 * 2 - 16,
+                w: 45,
+                h: 40,
+            },
+        },
+        //obstacle 4
+        Wall {
+            rect: Rect {
+                x: WIDTH as i32 / 4 * 3 - 16,
+                y: HEIGHT as i32 / 3 - 16,
+                w: 90,
+                h: 60,
             },
         },
     ];
@@ -275,7 +325,7 @@ fn main() {
     // Track beginning of play
     let start = Instant::now();
     let mut contacts = vec![];
-    let mut mobiles = [player];
+    let mut mobiles = [player, mover];
     // Track end of the last frame
     let mut since = Instant::now();
     event_loop.run(move |event, _, control_flow| {
@@ -289,6 +339,8 @@ fn main() {
             }
             // Draw the player
             rect(fb, mobiles[0].rect, PLAYER_COL);
+            // Draw the mover obstacle
+            rect(fb, mobiles[1].rect, WALL_COL);
             // Flip buffers
             if pixels.render().is_err() {
                 *control_flow = ControlFlow::Exit;
@@ -315,6 +367,8 @@ fn main() {
         while available_time >= DT {
             //println!("{}", left);
             let player = &mut mobiles[0];
+
+
             // Eat up one frame worth of time
             available_time -= DT;
 
@@ -345,6 +399,12 @@ fn main() {
             }
             // Update player position
             player.rect.translate(player.vx, player.vy);
+            
+            
+            // Update mover position
+            mobiles[1].rect.translate(-1, 0);
+
+
             // Detect collisions: Generate contacts
             contacts.clear();
             gather_contacts(&walls, &mobiles, &mut contacts);
