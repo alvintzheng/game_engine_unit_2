@@ -1,8 +1,9 @@
 /**** NOTES ****
-    - reduce gravity some
+    - 
 */
 /**** TO DO ****
-    - 
+    - game over page, set up gamestate/menu structure
+    - read/write to external file for high score (time survived=score?)
 */
 
 use pixels::{Pixels, SurfaceTexture};
