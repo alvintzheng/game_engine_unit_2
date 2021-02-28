@@ -63,22 +63,22 @@ fn main() {
     let boattileset = Rc::new(Tileset {
         tiles: vec![
             //image comprises 16 tiles
-            Tile { oppgrid: true, opphit: false, myship: false }, //empty opponent
-            Tile { oppgrid: false, opphit: false, myship: false }, //ocean
-            Tile { oppgrid: false, opphit: false, myship: false }, //ocean
-            Tile { oppgrid: true, opphit: true, myship: false }, //hidden opponent
-            Tile { oppgrid: false, opphit: false, myship: false }, //my ship hit
-            Tile { oppgrid: false, opphit: false, myship: true }, //single ship
-            Tile { oppgrid: false, opphit: false, myship: true }, //double ship 1
-            Tile { oppgrid: false, opphit: false, myship: true }, //double ship 2
-            Tile { oppgrid: true, opphit: false, myship: false }, //hit opponent
-            Tile { oppgrid: false, opphit: false, myship: true }, //tall ship 1
-            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 1
-            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 2
-            Tile { oppgrid: true, opphit: false, myship: false }, //missed opponent
-            Tile { oppgrid: false, opphit: false, myship: true }, //tall ship 2
-            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 3
-            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 4
+            Tile { oppgrid: true, opphit: false, myship: false }, //empty opponent - 0
+            Tile { oppgrid: false, opphit: false, myship: false }, //ocean - 1
+            Tile { oppgrid: false, opphit: false, myship: false }, //ocean - 2
+            Tile { oppgrid: true, opphit: true, myship: false }, //hidden opponent - 3
+            Tile { oppgrid: false, opphit: false, myship: false }, //my ship hit - 4
+            Tile { oppgrid: false, opphit: false, myship: true }, //single ship - 5
+            Tile { oppgrid: false, opphit: false, myship: true }, //double ship 1 - 6
+            Tile { oppgrid: false, opphit: false, myship: true }, //double ship 2 - 7
+            Tile { oppgrid: true, opphit: false, myship: false }, //hit opponent - 8
+            Tile { oppgrid: false, opphit: false, myship: true }, //tall ship 1 - 9
+            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 1 - 10
+            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 2 - 11
+            Tile { oppgrid: true, opphit: false, myship: false }, //missed opponent - 12
+            Tile { oppgrid: false, opphit: false, myship: true }, //tall ship 2 - 13
+            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 3 - 14
+            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 4 - 15
         ],
         texture: Rc::new(Texture::with_file(Path::new("tileset.png"))), //bring in image as texture
     });
@@ -90,7 +90,7 @@ fn main() {
         Vec2i(0, 0),
         (4, 4),
         &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //view of opponent
+        vec![0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0], //view of opponent
     );
     let oppmap1 = Tilemap::new(
         Vec2i(MAPDIM, 0),
@@ -245,6 +245,10 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     // Player control goes here
     if input.key_held(VirtualKeyCode::Right) {
         //state.scroll.0 += 2;
+       // state.tilemaps[0].
+
+       ////need set tile function to call here
+
     }
     if input.key_held(VirtualKeyCode::Left) {}
     if input.key_held(VirtualKeyCode::Up) {}
