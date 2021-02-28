@@ -12,6 +12,7 @@ pub struct Tile {
     pub myship: bool, // whether player has a ship in that tile, switch if it is hit
 }
 /// A set of tiles used in multiple Tilemaps
+#[derive(Clone)]
 pub struct Tileset {
     // Tile size is a constant, so we can find the tile in the texture using math
     // (assuming the texture is a grid of tiles).
@@ -60,13 +61,14 @@ impl Tileset {
 }
 
 /// An actual tilemap
+#[derive(Clone)]
 pub struct Tilemap {
     /// Where the tilemap is in space, use your favorite number type here
     pub position: Vec2i,
     /// How big it is
     dims: (usize, usize),
     /// Which tileset is used for this tilemap
-    tileset: Rc<Tileset>,
+    pub tileset: Rc<Tileset>,
     /// A row-major grid of tile IDs in tileset
     map: Vec<TileID>,
 }
@@ -91,6 +93,8 @@ impl Tilemap {
         }
     }
 
+    //input: window coordinates
+    //output: TileID - type of tile at that position in the map
     pub fn tile_id_at(&self, Vec2i(x, y): Vec2i) -> TileID {
         // Translate into map coordinates
         let x = (x - self.position.0) / TILE_SZ as i32;
@@ -107,13 +111,39 @@ impl Tilemap {
             y,
             self.dims.1
         );
-        self.map[y as usize * self.dims.0 + x as usize]
+        //self.map[y as usize * self.dims.0 + x as usize]
+        self.map[y as usize  + x as usize]
     }
     pub fn size(&self) -> (usize, usize) {
         self.dims
     }
+
+    //input: window coordinates
+    //output: Tile
     pub fn tile_at(&self, posn: Vec2i) -> Tile {
         self.tileset[self.tile_id_at(posn)]
+    }
+
+    pub fn set_tile_at(&mut self, Vec2i(x, y): Vec2i, id: usize) {
+
+    //pub fn set_tile_at(mut self, Vec2i(x, y): Vec2i, id: usize) {
+        // Translate into map coordinates
+        let x = (x - self.position.0) / TILE_SZ as i32;
+        let y = (y - self.position.1) / TILE_SZ as i32;
+        assert!(
+            x >= 0 && x < self.dims.0 as i32,
+            "Tile X coordinate {} out of bounds {}",
+            x,
+            self.dims.0
+        );
+        assert!(
+            y >= 0 && y < self.dims.1 as i32,
+            "Tile Y coordinate {} out of bounds {}",
+            y,
+            self.dims.1
+        );
+        self.map[y as usize * self.dims.0 + x as usize] = TileID(id);
+
     }
 
     //from Slack comments

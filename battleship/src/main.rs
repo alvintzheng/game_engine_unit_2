@@ -257,6 +257,18 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
 
        //prints twice?
        println!("mouse coordinates: ({}, {})", input.mouse().unwrap().0, input.mouse().unwrap().1);
+
+       //tester writing over a whole tilemap
+        state.tilemaps[1] = Tilemap::new(
+            Vec2i(64, 0),
+            (4, 4),
+            &state.tilemaps[1].tileset,
+            vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0], //view of opponent
+        );
+
+        //coordinates are off
+        state.tilemaps[0].set_tile_at(Vec2i(input.mouse().unwrap().0 as i32, input.mouse().unwrap().1 as i32), 12);
+
     }
 
     if input.key_held(VirtualKeyCode::Right) {}
