@@ -38,6 +38,7 @@ impl<'fb> Screen<'fb> {
             return;
         }
         assert_eq!(self.depth, 4);
+
         // Now x and y are within framebuffer bounds so go ahead and draw
         let c = [col.0, col.1, col.2, col.3];
         let idx = y * self.width as i32 * self.depth as i32 + x * self.depth as i32;

@@ -7,7 +7,9 @@ pub const TILE_SZ: usize = 16;
 /// A graphical tile, we'll implement Copy since it's tiny
 #[derive(Clone, Copy)]
 pub struct Tile {
-    pub solid: bool, // ... any extra data like collision flags or other properties
+    pub oppgrid: bool, //whether tile is part of opponent's grid or player's grid
+    pub opphit: bool, //whether opponent has ship in that tile, switch if it is hit
+    pub myship: bool, // whether player has a ship in that tile, switch if it is hit
 }
 /// A set of tiles used in multiple Tilemaps
 pub struct Tileset {

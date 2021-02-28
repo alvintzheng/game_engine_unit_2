@@ -39,6 +39,7 @@ const WIDTH: usize = MAPDIM as usize * 3;
 const HEIGHT: usize = MAPDIM as usize * 4;
 const DEPTH: usize = 4;
 
+
 fn main() {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
@@ -62,22 +63,22 @@ fn main() {
     let boattileset = Rc::new(Tileset {
         tiles: vec![
             //image comprises 16 tiles
-            Tile { solid: false },
-            Tile { solid: false },
-            Tile { solid: false },
-            Tile { solid: false },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
-            Tile { solid: true },
+            Tile { oppgrid: true, opphit: false, myship: false }, //empty opponent
+            Tile { oppgrid: false, opphit: false, myship: false }, //ocean
+            Tile { oppgrid: false, opphit: false, myship: false }, //ocean
+            Tile { oppgrid: true, opphit: true, myship: false }, //hidden opponent
+            Tile { oppgrid: false, opphit: false, myship: false }, //my ship hit
+            Tile { oppgrid: false, opphit: false, myship: true }, //single ship
+            Tile { oppgrid: false, opphit: false, myship: true }, //double ship 1
+            Tile { oppgrid: false, opphit: false, myship: true }, //double ship 2
+            Tile { oppgrid: true, opphit: false, myship: false }, //hit opponent
+            Tile { oppgrid: false, opphit: false, myship: true }, //tall ship 1
+            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 1
+            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 2
+            Tile { oppgrid: true, opphit: false, myship: false }, //missed opponent
+            Tile { oppgrid: false, opphit: false, myship: true }, //tall ship 2
+            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 3
+            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 4
         ],
         texture: Rc::new(Texture::with_file(Path::new("tileset.png"))), //bring in image as texture
     });
