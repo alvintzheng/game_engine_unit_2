@@ -3,10 +3,13 @@ use std::path::Path;
 use std::rc::Rc;
 use std::time::Instant;
 use winit::dpi::LogicalSize;
-use winit::event::{Event, VirtualKeyCode};
+use winit::event::{Event, VirtualKeyCode, WindowEvent, MouseButton};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
+
+
+
 
 // Whoa what's this?
 // Mod without brackets looks for a nearby file.
@@ -243,13 +246,20 @@ fn draw_game(state: &GameState, screen: &mut Screen) {
 
 fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     // Player control goes here
-    if input.key_held(VirtualKeyCode::Right) {
+
+    //0 == Left
+    if input.mouse_pressed(0) {
+
         //state.scroll.0 += 2;
        // state.tilemaps[0].
 
        ////need set tile function to call here
 
+       //prints twice?
+       println!("mouse coordinates: ({}, {})", input.mouse().unwrap().0, input.mouse().unwrap().1);
     }
+
+    if input.key_held(VirtualKeyCode::Right) {}
     if input.key_held(VirtualKeyCode::Left) {}
     if input.key_held(VirtualKeyCode::Up) {}
     if input.key_held(VirtualKeyCode::Down) {}
