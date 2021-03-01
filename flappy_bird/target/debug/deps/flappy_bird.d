@@ -1,5 +1,12 @@
-/Users/madelinedortignacq/Desktop/College/Spring 2021/CS181G-GameEngine/game_engine_unit_2/flappy_bird/target/debug/deps/flappy_bird: src/main.rs
+C:\Users\Alvin\Desktop\Year4\Game Engines\game_engine_unit_2\flappy_bird\target\debug\deps\flappy_bird.exe: src\main.rs src\screen.rs src\texture.rs src\animation.rs src\sprite.rs src\types.rs src\collision.rs src\entity.rs
 
-/Users/madelinedortignacq/Desktop/College/Spring 2021/CS181G-GameEngine/game_engine_unit_2/flappy_bird/target/debug/deps/flappy_bird.d: src/main.rs
+C:\Users\Alvin\Desktop\Year4\Game Engines\game_engine_unit_2\flappy_bird\target\debug\deps\flappy_bird.d: src\main.rs src\screen.rs src\texture.rs src\animation.rs src\sprite.rs src\types.rs src\collision.rs src\entity.rs
 
-src/main.rs:
+src\main.rs:
+src\screen.rs:
+src\texture.rs:
+src\animation.rs:
+src\sprite.rs:
+src\types.rs:
+src\collision.rs:
+src\entity.rs:

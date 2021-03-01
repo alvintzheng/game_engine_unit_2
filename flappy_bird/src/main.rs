@@ -7,12 +7,31 @@
 */
 
 use pixels::{Pixels, SurfaceTexture};
+use std::path::Path;
+use std::rc::Rc;
 use std::time::Instant;
-use winit::dpi::PhysicalSize;
+use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
+
+use rand::{thread_rng, Rng};
+
+mod screen;
+use screen::Screen;
+mod texture;
+use texture::Texture;
+mod animation;
+use animation::Animation;
+mod sprite;
+use sprite::*;
+mod types;
+use types::*;
+mod collision;
+use collision::*;
+mod entity;
+use entity::*;
 
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -20,197 +39,30 @@ const DT: f64 = 1.0 / 60.0;
 const DEPTH: usize = 4;
 const WIDTH: usize = 800;
 const HEIGHT: usize = 500;
-const PITCH: usize = WIDTH * DEPTH;
+//const PITCH: usize = WIDTH * DEPTH;
 
 // We'll make our Color type an RGBA8888 pixel.
-type Color = [u8; DEPTH];
+//type Color = [u8; DEPTH];
 
-const CLEAR_COL: Color = [32, 32, 64, 255];
-const WALL_COL: Color = [200, 200, 200, 255];
-const PLAYER_COL: Color = [255, 255, 0, 255];
+const CLEAR_COL: Rgba = Rgba(0, 0, 0, 0);
+//const WALL_COL: Color = [200, 200, 200, 255];
+//const PLAYER_COL: Color = [255, 255, 0, 255];
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-struct Rect {
-    x: i32,
-    y: i32,
-    w: u16,
-    h: u16,
-}
-
-impl Rect {
-    fn translate(&mut self, x: i32, y: i32) {
-        self.x += x;
-        self.y += y;
-    }
-}
-
-struct Wall {
-    rect: Rect,
-}
-
-struct Mobile {
-    rect: Rect,
-    vx: i32,
-    vy: i32,
-}
-
-// pixels gives us an rgba8888 framebuffer
-fn clear(fb: &mut [u8], c: Color) {
-    // Four bytes per pixel; chunks_exact_mut gives an iterator over 4-element slices.
-    // So this way we can use copy_from_slice to copy our color slice into px very quickly.
-    for px in fb.chunks_exact_mut(4) {
-        px.copy_from_slice(&c);
-    }
-}
-
-#[allow(dead_code)]
-fn rect(fb: &mut [u8], r: Rect, c: Color) {
-    assert!(r.x < WIDTH as i32);
-    assert!(r.y < HEIGHT as i32);
-    // NOTE, very fragile! will break for out of bounds rects!  See next week for the fix.
-    let x1 = (r.x + r.w as i32).min(WIDTH as i32) as usize;
-    let y1 = (r.y + r.h as i32).min(HEIGHT as i32) as usize;
-    for row in fb[(r.y as usize * PITCH)..(y1 * PITCH)].chunks_exact_mut(PITCH) {
-        for p in row[(r.x as usize * DEPTH)..(x1 * DEPTH)].chunks_exact_mut(DEPTH) {
-            p.copy_from_slice(&c);
-        }
-    }
-}
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-enum ColliderID {
-    Static(usize),
-    Dynamic(usize),
-}
-
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-struct Contact {
-    a: ColliderID,
-    b: ColliderID,
-    mtv: (i32, i32),
-}
-
-fn rect_touching(r1: Rect, r2: Rect) -> bool {
-    // r1 left is left of r2 right
-    r1.x <= r2.x+r2.w as i32 &&
-        // r2 left is left of r1 right
-        r2.x <= r1.x+r1.w as i32 &&
-        // those two conditions handle the x axis overlap;
-        // the next two do the same for the y axis:
-        r1.y <= r2.y+r2.h as i32 &&
-        r2.y <= r1.y+r1.h as i32
-}
-
-fn rect_displacement(r1: Rect, r2: Rect) -> Option<(i32, i32)> {
-    // Draw this out on paper to double check, but these quantities
-    // will both be positive exactly when the conditions in rect_touching are true.
-    let x_overlap = (r1.x + r1.w as i32).min(r2.x + r2.w as i32) - r1.x.max(r2.x);
-    let y_overlap = (r1.y + r1.h as i32).min(r2.y + r2.h as i32) - r1.y.max(r2.y);
-    if x_overlap >= 0 && y_overlap >= 0 {
-        // This will return the magnitude of overlap in each axis.
-        Some((x_overlap, y_overlap))
-    } else {
-        None
-    }
-}
-
-// Here we will be using push() on into, so it can't be a slice
-fn gather_contacts(statics: &[Wall], dynamics: &[Mobile], into: &mut Vec<Contact>) {
-    // collide mobiles against mobiles
-    for (ai, a) in dynamics.iter().enumerate() {
-        for (bi, b) in dynamics.iter().enumerate().skip(ai + 1) {
-            if rect_touching(a.rect, b.rect) {
-                let overlap = rect_displacement(a.rect, b.rect).unwrap();
-                let mut mtv = (0, 0);
-                if overlap.0 > overlap.1 {
-                    mtv.1 = overlap.1;
-                } else {
-                    mtv.0 = overlap.0;
-                }
-                into.push(Contact {
-                    a: ColliderID::Dynamic(ai),
-                    b: ColliderID::Dynamic(bi),
-                    mtv,
-                });
-            }
-        }
-    }
-    // collide mobiles against walls
-    for (ai, a) in dynamics.iter().enumerate() {
-        for (bi, b) in statics.iter().enumerate() {
-            if rect_touching(a.rect, b.rect) {
-                let overlap = rect_displacement(a.rect, b.rect).unwrap();
-                let mut mtv = (0, 0);
-                if overlap.0 > overlap.1 {
-                    mtv.1 = overlap.1;
-                } else {
-                    mtv.0 = overlap.0;
-                }
-                into.push(Contact {
-                    a: ColliderID::Dynamic(ai),
-                    b: ColliderID::Static(bi),
-                    mtv,
-                });
-            }
-        }
-    }
-}
-
-fn restitute(statics: &[Wall], dynamics: &mut [Mobile], contacts: &mut [Contact]) {
-    // handle restitution of dynamics against dynamics and dynamics against statics wrt contacts.
-    // You could instead make contacts `Vec<Contact>` if you think you might remove contacts.
-    // You could also add an additional parameter, a slice or vec representing how far we've displaced each dynamic, to avoid allocations if you track a vec of how far things have been moved.
-    // You might also want to pass in another &mut Vec<Contact> to be filled in with "real" touches that actually happened.
-    contacts.sort_unstable_by_key(|c| -(c.mtv.0 * c.mtv.0 + c.mtv.1 * c.mtv.1));
-    for contact in contacts {
-        //just make a move cause its dynamic for sure
-        match contact.a {
-            ColliderID::Static(_) => {
-                println!("uhh");
-
-            }
-            ColliderID::Dynamic(index_a) => match contact.b {
-                ColliderID::Dynamic(_) => {
-                    println!("GAME OVER");
-
-                    //put in a trigger to call this in main to kill program or bring to new page
-                    //*control_flow = ControlFlow::Exit;
-                    return;
-                }
-                ColliderID::Static(index_b) => {
-                    let obj_a = &mut dynamics[index_a];
-                    let obj_b = &statics[index_b];
-                    let a_under = obj_a.rect.y > obj_b.rect.y;
-                    let a_totheright = obj_a.rect.x > obj_b.rect.x;
-                    let mut x_translate = contact.mtv.0;
-                    let mut y_translate = contact.mtv.1;
-                    if x_translate != 0 {
-                        obj_a.vx = 0;
-                    }
-                    if y_translate != 0 {
-                        obj_a.vy = 0;
-                    }
-                    if !a_under {
-                        y_translate *= -1;
-                    }
-                    if !a_totheright {
-                        x_translate *= -1;
-                    }
-                    obj_a.rect.translate(x_translate, y_translate);
-                    // println!("{} by {}", x_translate, y_translate);
-                }
-            },
-        }
-    }
-    // Keep going!  Note that you can assume every contact has a dynamic object in .a.
-    // You might decide to tweak the interface of this function to separately take dynamic-static and dynamic-dynamic contacts, to avoid a branch inside of the response calculation.
-    // Or, you might decide to calculate signed mtvs taking direction into account instead of the unsigned displacements from rect_displacement up above.  Or calculate one MTV per involved entity, then apply displacements to both objects during restitution (sorting by the max or the sum of their magnitudes)
+struct GameState {
+    // What data do we need for this game?  Wall positions?
+    // Colliders?  Sprites and stuff?
+    //animations: Vec<Animation>,
+    //textures: Vec<Rc<Texture>>,
+    player: Entity,
+    obstacles: Vec<Entity>,
+    //tiles: Vec<Tilemap>,
 }
 
 fn main() {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
-        let size = PhysicalSize::new(WIDTH as f64, HEIGHT as f64);
+        let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
         WindowBuilder::new()
             .with_title("Collision2D")
             .with_inner_size(size)
@@ -224,124 +76,110 @@ fn main() {
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH as u32, HEIGHT as u32, surface_texture).unwrap()
     };
-    let mut player = Mobile {
-        rect: Rect {
-            x: 32,
-            //y: HEIGHT as i32 - 16 - 16,
-            //player drops from ceiling
-            y: 16 + 16 + 16,
-            w: 16,
-            h: 16,
+
+    //load assets
+    let player_tex = Rc::new(Texture::with_file(Path::new("./res/sprites.png")));
+    let obstacle_tex = Rc::new(Texture::with_file(Path::new("./res/Warp_pipe.png")));
+    let mut player_sprite = Sprite::new(
+        &player_tex,
+        Rect {
+            x: 0,
+            y: 0,
+            w: 64,
+            h: 64,
         },
-        vx: 0,
-        vy: 0,
-    };
-    //mobile obstacle
-    let mut mover = Mobile {
-        rect: Rect {
-            x: WIDTH as i32 - 100 - 16,
-            y: HEIGHT as i32 - 100 - 16,
-            w: 50,
-            h: 50,
-        },
-        vx: -2,
-        vy: 0,
+        Vec2i(0, 0),
+    );
+    let mut player_animation = Animation::new(64, 64, 0, 0, 4);
+    player_sprite.animations.push(player_animation);
+    let mut player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 16, h: 16}, vx:0, vy: 0};
+    let mut player = Entity::new(player_hitbox, player_sprite, true);
+    
+    let obstacles: Vec<Entity> = vec![];
+    let obstacle_spacing = 100;
+    let obstacle_width: u16 = 30;
+    let obstacle_max_height: u16 = 50;
+    let obstacle_min_height: u16 = 20;
+    let obstacle_speed: u16 = 2;
+    let min_obstacles = WIDTH / (obstacle_spacing + obstacle_width) as usize;
+    println!("{}", min_obstacles);
+
+    let mut state = GameState {
+        // initial game state...
+        player: player,
+        obstacles: obstacles,
+        //tiles: tilemaps,
     };
 
-    let walls = [
-        Wall {
-            rect: Rect {
-                x: 0,
-                y: 0,
-                w: WIDTH as u16,
-                h: 16,
-            },
-        },
-        Wall {
-            rect: Rect {
-                x: 0,
-                y: 0,
-                w: 16,
-                h: HEIGHT as u16,
-            },
-        },
-        Wall {
-            rect: Rect {
-                x: WIDTH as i32 - 16,
-                y: 0,
-                w: 16,
-                h: HEIGHT as u16,
-            },
-        },
-        Wall {
-            rect: Rect {
-                x: 0,
-                y: HEIGHT as i32 - 16,
-                w: WIDTH as u16,
-                h: 16,
-            },
-        },
-        //stationary obstacles to begin with - to be replaced by PCG obstacles
-        //obstacle 1
-        Wall {
-            rect: Rect {
-                x: WIDTH as i32 / 2 - 16,
-                y: HEIGHT as i32 / 2 - 16,
-                w: 32,
-                h: 32,
-            },
-        },
-        //obstacle 2
-        Wall {
-            rect: Rect {
-                x: WIDTH as i32 / 8 - 16,
-                y: HEIGHT as i32 / 8 - 16,
-                w: 250,
-                h: 200,
-            },
-        },
-        //obstacle 3
-        Wall {
-            rect: Rect {
-                x: WIDTH as i32 / 3 * 2 - 16,
-                y: HEIGHT as i32 / 3 * 2 - 16,
-                w: 45,
-                h: 40,
-            },
-        },
-        //obstacle 4
-        Wall {
-            rect: Rect {
-                x: WIDTH as i32 / 4 * 3 - 16,
-                y: HEIGHT as i32 / 3 - 16,
-                w: 90,
-                h: 60,
-            },
-        },
-    ];
+    let mut camera_position = Vec2i(0,0);
+
     // How many frames have we simulated?
     let mut frame_count: usize = 0;
     // How many unsimulated frames have we saved up?
     let mut available_time = 0.0;
     // Track beginning of play
     let start = Instant::now();
-    let mut contacts = vec![];
-    let mut mobiles = [player, mover];
+    //let mut contacts = vec![];
+    //let mut mobiles = [player, mover];
     // Track end of the last frame
     let mut since = Instant::now();
     event_loop.run(move |event, _, control_flow| {
+
+        let mut screen = Screen::wrap(pixels.get_frame(), WIDTH, HEIGHT, DEPTH, camera_position);
+        screen.clear(CLEAR_COL);
+        draw_game(&mut state, &mut screen);
+        // Flip buffers
+        if pixels.render().is_err() {
+            *control_flow = ControlFlow::Exit;
+            return;
+        }
+
+        // delete old pipes and add new ones
+        // add new elems
+        if state.obstacles.len() < min_obstacles {
+            if state.obstacles.len() == 0 || WIDTH as i32 - state.obstacles[state.obstacles.len() - 1].hitbox.rect.x - (obstacle_width as i32) >= obstacle_spacing as i32 {
+            //println!("creating obstacle");
+            let new_height = thread_rng().gen_range(obstacle_min_height, obstacle_max_height);
+            let mut new_hitbox = Mobile {
+                rect: Rect {
+                    x: WIDTH as i32 - obstacle_width as i32,
+                    y: HEIGHT as i32 - new_height as i32,
+                    w: obstacle_width,
+                    h: new_height as u16,
+                },
+                vx: obstacle_speed as i32 * -1,
+                vy: 0,
+            };
+            let mut new_sprite = Sprite::new(
+                &obstacle_tex,
+                Rect {
+                    x: 0,
+                    y: 0,
+                    w: 64,
+                    h: 64,
+                },
+                Vec2i(0, 0),
+            );
+            let mut new_animation = Animation::new(obstacle_width, new_height as u16, 0, 0, 1);
+            new_sprite.animations.push(new_animation);
+            let mut new_obstacle = Entity::new(new_hitbox, new_sprite, false);
+            state.obstacles.push(new_obstacle);
+            }
+        }
+
+        // check front pipe to see if it needs to be deleted
+
+        if state.obstacles[0].hitbox.rect.x < 0 - obstacle_width as i32 {
+                let _ = state.obstacles.remove(0);
+        }
+
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
-            let fb = pixels.get_frame();
-            clear(fb, CLEAR_COL);
-            // Draw the walls
-            for w in walls.iter() {
-                rect(fb, w.rect, WALL_COL);
-            }
-            // Draw the player
-            rect(fb, mobiles[0].rect, PLAYER_COL);
-            // Draw the mover obstacle
-            rect(fb, mobiles[1].rect, WALL_COL);
+            let mut screen = Screen::wrap(pixels.get_frame(), WIDTH, HEIGHT, DEPTH, camera_position);
+            screen.clear(CLEAR_COL);
+
+            draw_game(&mut state, &mut screen);
+
             // Flip buffers
             if pixels.render().is_err() {
                 *control_flow = ControlFlow::Exit;
@@ -366,54 +204,9 @@ fn main() {
         }
         // And the simulation "consumes" it
         while available_time >= DT {
-            //println!("{}", left);
-            let player = &mut mobiles[0];
-
-
             // Eat up one frame worth of time
             available_time -= DT;
-
-            // Player control goes here; determine player acceleration
-
-            // Determine player velocity
-            let movespeed: i32 = 2;
-            if input.key_held(VirtualKeyCode::Left) {
-                player.vx = -1 * movespeed;
-            } else if input.key_held(VirtualKeyCode::Right) {
-                player.vx = 1 * movespeed;
-            } else if input.key_pressed(VirtualKeyCode::Down) {
-                //player.vx = 0;
-            } else {
-                player.vx = 0;
-            }
-            let mut accel_down = 1;
-            if input.key_held(VirtualKeyCode::Up) {
-                accel_down -= 2;
-            }
-            player.vy += accel_down;
-            //clamp velocity since this restitution assumes objects aren't speeding too much
-            if player.vy > 4 {
-                player.vy = 4;
-            }
-            if player.vy < -4 {
-                player.vy = -4;
-            }
-            // Update player position
-            player.rect.translate(player.vx, player.vy);
-            
-            
-            // Update mover position
-            mobiles[1].rect.translate(-1, 0);
-
-
-            // Detect collisions: Generate contacts
-            contacts.clear();
-            gather_contacts(&walls, &mobiles, &mut contacts);
-
-            // Handle collisions: Apply restitution impulses.
-            restitute(&walls, &mut mobiles, &mut contacts);
-
-            // Update game rules: What happens when the player touches things?
+            update_game(&mut state, &input, frame_count);
 
             // Increment the frame counter
             frame_count += 1;
@@ -423,4 +216,46 @@ fn main() {
         // When did the last frame end?
         since = Instant::now();
     });
+}
+
+fn draw_game(state: &mut GameState, screen: &mut Screen) {
+    // Call screen's drawing methods to render the game state
+    screen.clear(Rgba(80, 80, 80, 255));
+
+    for obs in state.obstacles.iter_mut() {
+        screen.draw_entity(obs);
+    }
+    screen.draw_entity(&mut state.player);
+}
+
+
+fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
+    // let player = &mut state.player.hitbox;
+    // // Determine player velocity
+    // let movespeed: i32 = 2;
+    // if input.key_held(VirtualKeyCode::Left) {
+    //     //player.vx = -1 * movespeed;
+    // } else if input.key_held(VirtualKeyCode::Right) {
+    //     //player.vx = 1 * movespeed;
+    // } else if input.key_pressed(VirtualKeyCode::Down) {
+    //     //player.vx = 0;
+    // } else {
+    //     player.vx = 0;
+    // }
+    // let mut accel_down = 1;
+    // if input.key_held(VirtualKeyCode::Up) {
+    //     accel_down -= 2;
+    // }
+    // player.vy += accel_down;
+    // //clamp velocity since this restitution assumes objects aren't speeding too much
+    // if player.vy > 4 {
+    //     player.vy = 4;
+    // }
+    // if player.vy < -4 {
+    //     player.vy = -4;
+    // }
+
+    for mut obs in state.obstacles.iter_mut() {
+        obs.hitbox.update();
+    }
 }
