@@ -1,4 +1,4 @@
-use pixels::{Pixels, SurfaceTexture};
+ use pixels::{Pixels, SurfaceTexture};
 use std::path::Path;
 use std::rc::Rc;
 use std::time::Instant;
@@ -33,6 +33,7 @@ use tiles::*;
 
 // Now this main module is just for the run-loop and rules processing.
 struct GameState {
+    title_image: Rc<Texture>,
     tilemaps: Vec<Tilemap>, //vector of tilemaps stored in GameState
 }
 // seconds per frame
@@ -42,6 +43,108 @@ const WIDTH: usize = MAPDIM as usize * 3;
 const HEIGHT: usize = MAPDIM as usize * 4;
 const DEPTH: usize = 4;
 
+#[derive(Debug,Copy,Clone)]
+enum Mode {
+    Title,
+    Play(Turn),
+    Options,
+    EndGame
+}
+
+#[derive(Debug,Copy,Clone)]
+enum Turn {
+    Human,
+    Computer
+}
+
+impl Mode {
+    // update consumes self and yields a new state (which might also just be self)
+    fn update(self, game:&mut GameState, input: &WinitInputHelper) -> Self {
+        match self {
+            Mode::Title => {//pass
+
+                if input.key_pressed(VirtualKeyCode::P) {
+                    Mode::Play(Turn::Human)
+                }
+                else{
+                    self
+                }
+            },
+            Mode::Play(pm) => { //move update_game to here
+                //not using pm rn
+                // if let Some(pm) = pm.update(game, input) {
+                //     Mode::Play(pm);
+                // }
+                if input.mouse_pressed(0) {
+                    ////need set tile function to call here
+             
+                    //prints twice?
+                    println!("mouse coordinates: ({}, {})", input.mouse().unwrap().0, input.mouse().unwrap().1);
+             
+                    //tester writing over a whole tilemap
+                     game.tilemaps[1] = Tilemap::new(
+                         Vec2i(64, 0),
+                         (4, 4),
+                         &game.tilemaps[1].tileset,
+                         vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0], //view of opponent
+                     );
+             
+                     //coordinates are off
+                     game.tilemaps[0].set_tile_at(Vec2i(input.mouse().unwrap().0 as i32, input.mouse().unwrap().1 as i32), 12);
+             
+                 }
+                 if input.key_pressed(VirtualKeyCode::T) {
+                    println!("testing");
+                    Mode::Title
+                }
+                 else{
+                     //Mode::EndGame
+                     Mode::Play(pm)
+                 }
+                 //Mode::Play(pm)
+            },
+            Mode::Options => {Mode::Options},
+            Mode::EndGame => {
+                if input.key_pressed(VirtualKeyCode::Q) {
+                    panic!();
+                }
+                else{
+                    self
+                }
+            },
+        }
+    }
+    fn display(&self, game:&GameState, screen: &mut Screen) {
+        match self {
+            Mode::Title => {//draw a (static?) title
+                screen.clear(Rgba(80, 80, 80, 255));
+                let display_rect = Rect{x:0, y:0, w: 100, h: 200};
+                screen.bitblt(&game.title_image, display_rect, Vec2i(0,0));
+            },
+            Mode::Play(pm) => {
+                // Call screen's drawing methods to render the game state
+                screen.clear(Rgba(80, 80, 80, 255));
+
+                //draw each tilemap in vector to screen
+                game.tilemaps[0].draw(screen);
+                game.tilemaps[1].draw(screen);
+                game.tilemaps[2].draw(screen);
+                game.tilemaps[3].draw(screen);
+                game.tilemaps[4].draw(screen);
+                game.tilemaps[5].draw(screen);
+                game.tilemaps[6].draw(screen);
+                game.tilemaps[7].draw(screen);
+                game.tilemaps[8].draw(screen);
+                game.tilemaps[9].draw(screen);
+                game.tilemaps[10].draw(screen);
+                game.tilemaps[11].draw(screen);
+            },
+            Mode::Options => {},
+            Mode::EndGame => {// Draw game result?
+            },
+        }
+    }
+}
 
 fn main() {
     let event_loop = EventLoop::new();
@@ -61,6 +164,8 @@ fn main() {
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH as u32, HEIGHT as u32, surface_texture).unwrap()
     };
+
+    let title_image = Rc::new(Texture::with_file(Path::new("res/logo.png")));
 
     //create Tileset from tileset.png image
     let boattileset = Rc::new(Tileset {
@@ -163,13 +268,17 @@ fn main() {
         vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     );
 
+    let mut mode = Mode::Title;
+
     let mut state = GameState {
         // initial game state...
         tilemaps: vec![
             oppmap0, oppmap1, oppmap2, oppmap3, oppmap4, oppmap5, map0, map1, map2, map3, map4,
             map5,
         ], //vector of tilemaps
+        title_image: title_image,
     };
+
     // How many frames have we simulated?
     let mut frame_count: usize = 0;
     // How many unsimulated frames have we saved up?
@@ -183,8 +292,10 @@ fn main() {
         if let Event::RedrawRequested(_) = event {
             let mut screen = Screen::wrap(pixels.get_frame(), WIDTH, HEIGHT, DEPTH);
             screen.clear(Rgba(0, 0, 0, 0));
-
-            draw_game(&state, &mut screen);
+            
+            // change to draw game using state and mode, i.e. mode.draw_game(state)
+            //draw_game(&state, &mut screen);
+            mode.display(&state, &mut screen);
 
             // Flip buffers
             if pixels.render().is_err() {
@@ -213,8 +324,9 @@ fn main() {
             // Eat up one frame worth of time
             available_time -= DT;
 
-            update_game(&mut state, &input, frame_count);
-
+            // change to use mode
+            //update_game(&mut state, &input, frame_count);
+            mode = mode.update(&mut state, &input);
             // Increment the frame counter
             frame_count += 1;
         }
@@ -249,10 +361,6 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
 
     //0 == Left
     if input.mouse_pressed(0) {
-
-        //state.scroll.0 += 2;
-       // state.tilemaps[0].
-
        ////need set tile function to call here
 
        //prints twice?
@@ -275,11 +383,4 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     if input.key_held(VirtualKeyCode::Left) {}
     if input.key_held(VirtualKeyCode::Up) {}
     if input.key_held(VirtualKeyCode::Down) {}
-    // Update player position
-
-    // Detect collisions: Generate contacts
-
-    // Handle collisions: Apply restitution impulses.
-
-    // Update game rules: What happens when the player touches things?
 }
