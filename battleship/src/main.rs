@@ -81,15 +81,8 @@ impl Mode {
                     //prints twice?
                     println!("mouse coordinates: ({}, {})", input.mouse().unwrap().0, input.mouse().unwrap().1);
              
-                    //tester writing over a whole tilemap
-                     game.tilemaps[1] = Tilemap::new(
-                         Vec2i(64, 0),
-                         (4, 4),
-                         &game.tilemaps[1].tileset,
-                         vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0], //view of opponent
-                     );
              
-                     //coordinates are off
+                     //change tile at coordinates
                      game.tilemaps[0].set_tile_at(Vec2i(input.mouse().unwrap().0 as i32, input.mouse().unwrap().1 as i32), 12);
              
                  }
@@ -128,16 +121,16 @@ impl Mode {
                 //draw each tilemap in vector to screen
                 game.tilemaps[0].draw(screen);
                 game.tilemaps[1].draw(screen);
-                game.tilemaps[2].draw(screen);
-                game.tilemaps[3].draw(screen);
-                game.tilemaps[4].draw(screen);
-                game.tilemaps[5].draw(screen);
-                game.tilemaps[6].draw(screen);
-                game.tilemaps[7].draw(screen);
-                game.tilemaps[8].draw(screen);
-                game.tilemaps[9].draw(screen);
-                game.tilemaps[10].draw(screen);
-                game.tilemaps[11].draw(screen);
+                //game.tilemaps[2].draw(screen);
+                //game.tilemaps[3].draw(screen);
+                //game.tilemaps[4].draw(screen);
+                //game.tilemaps[5].draw(screen);
+                //game.tilemaps[6].draw(screen);
+                //game.tilemaps[7].draw(screen);
+                //game.tilemaps[8].draw(screen);
+                //game.tilemaps[9].draw(screen);
+                //game.tilemaps[10].draw(screen);
+                //game.tilemaps[11].draw(screen);
             },
             Mode::Options => {},
             Mode::EndGame => {// Draw game result?
@@ -194,87 +187,45 @@ fn main() {
     // 6 tilemaps, each 4x4 tiles
     //tilemaps join together into a 3x2 map, i.e. 12x8 tile grid
     //opponent's ships
-    let oppmap0 = Tilemap::new(
-        Vec2i(0, 0),
-        (4, 4),
+
+    let oppmap = Tilemap::new(
+        Vec2i(0, 0), //location
+        (12, 8),
         &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0], //view of opponent
-    );
-    let oppmap1 = Tilemap::new(
-        Vec2i(MAPDIM, 0),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    );
-    let oppmap2 = Tilemap::new(
-        Vec2i(MAPDIM * 2, 0),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0], //x mark
-    );
-    let oppmap3 = Tilemap::new(
-        Vec2i(0, MAPDIM),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    );
-    let oppmap4 = Tilemap::new(
-        Vec2i(MAPDIM, MAPDIM),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0], //check mark
-    );
-    let oppmap5 = Tilemap::new(
-        Vec2i(MAPDIM * 2, MAPDIM),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        vec![
+        0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, //3s are hidden opponents
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     );
     //your ships
-    let map0 = Tilemap::new(
-        Vec2i(0, MAPDIM * 2),
-        (4, 4),
+    let mymap = Tilemap::new(
+        Vec2i(0, MAPDIM * 2), //location
+        (12, 8),
         &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5], //single ship
+        vec![
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
+        1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
+        1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, //x mark
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        ], 
     );
-    let map1 = Tilemap::new(
-        Vec2i(MAPDIM, MAPDIM * 2),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 7, 1, 1, 1, 1], //double ship
-    );
-    let map2 = Tilemap::new(
-        Vec2i(MAPDIM * 2, MAPDIM * 2),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1], //x mark
-    );
-    let map3 = Tilemap::new(
-        Vec2i(0, MAPDIM * 3),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    );
-    let map4 = Tilemap::new(
-        Vec2i(MAPDIM, MAPDIM * 3),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 10, 11, 1, 1, 14, 15, 1, 1, 1, 1, 1, 1], //pirate ship
-    );
-    let map5 = Tilemap::new(
-        Vec2i(MAPDIM * 2, MAPDIM * 3),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    );
+
 
     let mut mode = Mode::Title;
 
     let mut state = GameState {
         // initial game state...
         tilemaps: vec![
-            oppmap0, oppmap1, oppmap2, oppmap3, oppmap4, oppmap5, map0, map1, map2, map3, map4,
-            map5,
+            oppmap, mymap,
         ], //vector of tilemaps
         title_image: title_image,
     };
@@ -344,18 +295,8 @@ fn draw_game(state: &GameState, screen: &mut Screen) {
     //draw each tilemap in vector to screen
     state.tilemaps[0].draw(screen);
     state.tilemaps[1].draw(screen);
-    state.tilemaps[2].draw(screen);
-    state.tilemaps[3].draw(screen);
-    state.tilemaps[4].draw(screen);
-    state.tilemaps[5].draw(screen);
-    state.tilemaps[6].draw(screen);
-    state.tilemaps[7].draw(screen);
-    state.tilemaps[8].draw(screen);
-    state.tilemaps[9].draw(screen);
-    state.tilemaps[10].draw(screen);
-    state.tilemaps[11].draw(screen);
 }
-
+/* 
 fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     // Player control goes here
 
@@ -366,13 +307,13 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
        //prints twice?
        println!("mouse coordinates: ({}, {})", input.mouse().unwrap().0, input.mouse().unwrap().1);
 
-       //tester writing over a whole tilemap
+/*        //tester writing over a whole tilemap
         state.tilemaps[1] = Tilemap::new(
             Vec2i(64, 0),
             (4, 4),
-            &state.tilemaps[1].tileset,
+            &state.tilemaps[0].tileset,
             vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0], //view of opponent
-        );
+        ); */
 
         //coordinates are off
         state.tilemaps[0].set_tile_at(Vec2i(input.mouse().unwrap().0 as i32, input.mouse().unwrap().1 as i32), 12);
@@ -384,3 +325,4 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     if input.key_held(VirtualKeyCode::Up) {}
     if input.key_held(VirtualKeyCode::Down) {}
 }
+ */

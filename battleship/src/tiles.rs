@@ -4,6 +4,7 @@ use crate::Screen;
 use std::rc::Rc;
 
 pub const TILE_SZ: usize = 16;
+//pub const TILE_SZ: usize = 32;
 /// A graphical tile, we'll implement Copy since it's tiny
 #[derive(Clone, Copy)]
 pub struct Tile {
@@ -128,8 +129,11 @@ impl Tilemap {
 
     //pub fn set_tile_at(mut self, Vec2i(x, y): Vec2i, id: usize) {
         // Translate into map coordinates
-        let x = (x - self.position.0) / TILE_SZ as i32;
-        let y = (y - self.position.1) / TILE_SZ as i32;
+
+        let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
+        let y = (y - self.position.1) / 32 as i32;
+        println!("x: {}, y: {})", x, y);
+             
         assert!(
             x >= 0 && x < self.dims.0 as i32,
             "Tile X coordinate {} out of bounds {}",
