@@ -1,15 +1,12 @@
- use pixels::{Pixels, SurfaceTexture};
+use pixels::{Pixels, SurfaceTexture};
 use std::path::Path;
 use std::rc::Rc;
 use std::time::Instant;
 use winit::dpi::LogicalSize;
-use winit::event::{Event, VirtualKeyCode, WindowEvent, MouseButton};
+use winit::event::{Event, MouseButton, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
-
-
-
 
 // Whoa what's this?
 // Mod without brackets looks for a nearby file.
@@ -43,84 +40,117 @@ const WIDTH: usize = MAPDIM as usize * 3;
 const HEIGHT: usize = MAPDIM as usize * 4;
 const DEPTH: usize = 4;
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Debug, Copy, Clone)]
 enum Mode {
     Title,
     Play(Turn),
     Options,
-    EndGame
+    ScoreBoard, 
+    EndGame,
 }
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Debug, Copy, Clone)]
 enum Turn {
     Human,
-    Computer
+    Computer,
 }
 
 impl Mode {
     // update consumes self and yields a new state (which might also just be self)
-    fn update(self, game:&mut GameState, input: &WinitInputHelper) -> Self {
+    fn update(self, game: &mut GameState, input: &WinitInputHelper) -> Self {
         match self {
-            Mode::Title => {//pass
+            Mode::Title => {
 
                 if input.key_pressed(VirtualKeyCode::P) {
                     Mode::Play(Turn::Human)
                 }
-                else{
+                else if input.key_pressed(VirtualKeyCode::Q) {
+                    Mode::EndGame
+                } else {
                     self
                 }
-            },
-            Mode::Play(pm) => { //move update_game to here
+            }
+            Mode::Play(pm) => {
+                //move update_game to here
                 //not using pm rn
                 // if let Some(pm) = pm.update(game, input) {
                 //     Mode::Play(pm);
                 // }
                 if input.mouse_pressed(0) {
                     ////need set tile function to call here
-             
+
+                    let xcoor = input.mouse().unwrap().0 as i32;
+                    let ycoor = input.mouse().unwrap().1 as i32;
+
                     //prints twice?
-                    println!("mouse coordinates: ({}, {})", input.mouse().unwrap().0, input.mouse().unwrap().1);
-             
-                    //tester writing over a whole tilemap
-                     game.tilemaps[1] = Tilemap::new(
-                         Vec2i(64, 0),
-                         (4, 4),
-                         &game.tilemaps[1].tileset,
-                         vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0], //view of opponent
-                     );
-             
-                     //coordinates are off
-                     game.tilemaps[0].set_tile_at(Vec2i(input.mouse().unwrap().0 as i32, input.mouse().unwrap().1 as i32), 12);
-             
-                 }
-                 if input.key_pressed(VirtualKeyCode::T) {
-                    println!("testing");
-                    Mode::Title
+                    println!("mouse coordinates: ({}, {})", xcoor, ycoor);
+                    println!("tile opp hit bool: {}", game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit);
+
+                    //change tile at coordinates
+                    //was opponent's ship hidden there?
+                    if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
+                        game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8) //hit opponent
+                    } else { //missed
+                        game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 12) //missed opponent
+                    }
                 }
-                 else{
-                     //Mode::EndGame
-                     Mode::Play(pm)
-                 }
-                 //Mode::Play(pm)
-            },
-            Mode::Options => {Mode::Options},
+                if input.key_pressed(VirtualKeyCode::Q) {
+                    Mode::EndGame
+                }else if input.key_pressed(VirtualKeyCode::O) {
+                    Mode::Options
+                }else if input.key_pressed(VirtualKeyCode::S) {
+                    Mode::ScoreBoard
+                } else {
+                    Mode::Play(pm)
+                }
+            }
+            Mode::Options => {
+                if input.key_pressed(VirtualKeyCode::Q) {
+                    Mode::EndGame
+                }else if input.key_pressed(VirtualKeyCode::S) {
+                    Mode::ScoreBoard
+                }else if input.key_pressed(VirtualKeyCode::P) {
+                    Mode::Play(Turn::Human) //need to track and save turn and what the board looks like
+                } else {
+                    self
+                }
+            }
+            Mode::ScoreBoard => {
+                if input.key_pressed(VirtualKeyCode::Q) {
+                    Mode::EndGame
+                }else if input.key_pressed(VirtualKeyCode::O) {
+                    Mode::Options
+                }else if input.key_pressed(VirtualKeyCode::P) {
+                    Mode::Play(Turn::Human) //need to track and save turn and what the board looks like
+                } else {
+                    self
+                }
+            }
             Mode::EndGame => {
                 if input.key_pressed(VirtualKeyCode::Q) {
                     panic!();
+                } else if input.key_pressed(VirtualKeyCode::T) {
+                    Mode::Title
                 }
-                else{
+                else {
                     self
                 }
-            },
+            }
         }
     }
-    fn display(&self, game:&GameState, screen: &mut Screen) {
+    fn display(&self, game: &GameState, screen: &mut Screen) {
         match self {
-            Mode::Title => {//draw a (static?) title
+            Mode::Title => {
+                //draw a (static?) title
                 screen.clear(Rgba(80, 80, 80, 255));
-                let display_rect = Rect{x:0, y:0, w: 100, h: 200};
-                screen.bitblt(&game.title_image, display_rect, Vec2i(0,0));
-            },
+                let display_rect = Rect {
+                    x: 0,
+                    y: 0,
+                    w: 200,
+                    h: 210,
+                };
+                screen.bitblt(&game.title_image, display_rect, Vec2i(0, 0));
+            }
             Mode::Play(pm) => {
                 // Call screen's drawing methods to render the game state
                 screen.clear(Rgba(80, 80, 80, 255));
@@ -128,20 +158,16 @@ impl Mode {
                 //draw each tilemap in vector to screen
                 game.tilemaps[0].draw(screen);
                 game.tilemaps[1].draw(screen);
-                game.tilemaps[2].draw(screen);
-                game.tilemaps[3].draw(screen);
-                game.tilemaps[4].draw(screen);
-                game.tilemaps[5].draw(screen);
-                game.tilemaps[6].draw(screen);
-                game.tilemaps[7].draw(screen);
-                game.tilemaps[8].draw(screen);
-                game.tilemaps[9].draw(screen);
-                game.tilemaps[10].draw(screen);
-                game.tilemaps[11].draw(screen);
-            },
-            Mode::Options => {},
-            Mode::EndGame => {// Draw game result?
-            },
+            }
+            Mode::Options => {
+                screen.clear(Rgba(80, 255, 255, 255));
+            }
+            Mode::ScoreBoard => {
+                screen.clear(Rgba(255, 80, 255, 255));
+            }
+            Mode::EndGame => { // Draw game result?
+                screen.clear(Rgba(255, 255, 80, 255));
+            }
         }
     }
 }
@@ -171,22 +197,86 @@ fn main() {
     let boattileset = Rc::new(Tileset {
         tiles: vec![
             //image comprises 16 tiles
-            Tile { oppgrid: true, opphit: false, myship: false }, //empty opponent - 0
-            Tile { oppgrid: false, opphit: false, myship: false }, //ocean - 1
-            Tile { oppgrid: false, opphit: false, myship: false }, //ocean - 2
-            Tile { oppgrid: true, opphit: true, myship: false }, //hidden opponent - 3
-            Tile { oppgrid: false, opphit: false, myship: false }, //my ship hit - 4
-            Tile { oppgrid: false, opphit: false, myship: true }, //single ship - 5
-            Tile { oppgrid: false, opphit: false, myship: true }, //double ship 1 - 6
-            Tile { oppgrid: false, opphit: false, myship: true }, //double ship 2 - 7
-            Tile { oppgrid: true, opphit: false, myship: false }, //hit opponent - 8
-            Tile { oppgrid: false, opphit: false, myship: true }, //tall ship 1 - 9
-            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 1 - 10
-            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 2 - 11
-            Tile { oppgrid: true, opphit: false, myship: false }, //missed opponent - 12
-            Tile { oppgrid: false, opphit: false, myship: true }, //tall ship 2 - 13
-            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 3 - 14
-            Tile { oppgrid: false, opphit: false, myship: true }, //pirate ship 4 - 15
+            Tile {
+                oppgrid: true,
+                opphit: false,
+                myship: false,
+            }, //empty opponent - 0
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: false,
+            }, //ocean - 1
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: false,
+            }, //ocean - 2
+            Tile {
+                oppgrid: true,
+                opphit: true,
+                myship: false,
+            }, //hidden opponent - 3
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: false,
+            }, //my ship hit - 4
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //single ship - 5
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //double ship 1 - 6
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //double ship 2 - 7
+            Tile {
+                oppgrid: true,
+                opphit: false,
+                myship: false,
+            }, //hit opponent - 8
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //tall ship 1 - 9
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //pirate ship 1 - 10
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //pirate ship 2 - 11
+            Tile {
+                oppgrid: true,
+                opphit: false,
+                myship: false,
+            }, //missed opponent - 12
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //tall ship 2 - 13
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //pirate ship 3 - 14
+            Tile {
+                oppgrid: false,
+                opphit: false,
+                myship: true,
+            }, //pirate ship 4 - 15
         ],
         texture: Rc::new(Texture::with_file(Path::new("tileset.png"))), //bring in image as texture
     });
@@ -194,88 +284,44 @@ fn main() {
     // 6 tilemaps, each 4x4 tiles
     //tilemaps join together into a 3x2 map, i.e. 12x8 tile grid
     //opponent's ships
-    let oppmap0 = Tilemap::new(
-        Vec2i(0, 0),
-        (4, 4),
+
+    let oppmap = Tilemap::new(
+        Vec2i(0, 0), //location
+        (12, 8),
         &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0], //view of opponent
-    );
-    let oppmap1 = Tilemap::new(
-        Vec2i(MAPDIM, 0),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    );
-    let oppmap2 = Tilemap::new(
-        Vec2i(MAPDIM * 2, 0),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0], //x mark
-    );
-    let oppmap3 = Tilemap::new(
-        Vec2i(0, MAPDIM),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    );
-    let oppmap4 = Tilemap::new(
-        Vec2i(MAPDIM, MAPDIM),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0], //check mark
-    );
-    let oppmap5 = Tilemap::new(
-        Vec2i(MAPDIM * 2, MAPDIM),
-        (4, 4),
-        &boattileset,
-        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        vec![
+            3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+            0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, //
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, //
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+            3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+        ],
     );
     //your ships
-    let map0 = Tilemap::new(
-        Vec2i(0, MAPDIM * 2),
-        (4, 4),
+    let mymap = Tilemap::new(
+        Vec2i(0, MAPDIM * 2), //location
+        (12, 8),
         &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5], //single ship
-    );
-    let map1 = Tilemap::new(
-        Vec2i(MAPDIM, MAPDIM * 2),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 7, 1, 1, 1, 1], //double ship
-    );
-    let map2 = Tilemap::new(
-        Vec2i(MAPDIM * 2, MAPDIM * 2),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1], //x mark
-    );
-    let map3 = Tilemap::new(
-        Vec2i(0, MAPDIM * 3),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    );
-    let map4 = Tilemap::new(
-        Vec2i(MAPDIM, MAPDIM * 3),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 10, 11, 1, 1, 14, 15, 1, 1, 1, 1, 1, 1], //pirate ship
-    );
-    let map5 = Tilemap::new(
-        Vec2i(MAPDIM * 2, MAPDIM * 3),
-        (4, 4),
-        &boattileset,
-        vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        vec![
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
+            1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
+            1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, //x mark
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+            10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+            14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+        ],
     );
 
     let mut mode = Mode::Title;
 
     let mut state = GameState {
         // initial game state...
-        tilemaps: vec![
-            oppmap0, oppmap1, oppmap2, oppmap3, oppmap4, oppmap5, map0, map1, map2, map3, map4,
-            map5,
-        ], //vector of tilemaps
+        tilemaps: vec![oppmap, mymap], //vector of tilemaps
         title_image: title_image,
     };
 
@@ -292,7 +338,7 @@ fn main() {
         if let Event::RedrawRequested(_) = event {
             let mut screen = Screen::wrap(pixels.get_frame(), WIDTH, HEIGHT, DEPTH);
             screen.clear(Rgba(0, 0, 0, 0));
-            
+
             // change to draw game using state and mode, i.e. mode.draw_game(state)
             //draw_game(&state, &mut screen);
             mode.display(&state, &mut screen);
@@ -344,18 +390,8 @@ fn draw_game(state: &GameState, screen: &mut Screen) {
     //draw each tilemap in vector to screen
     state.tilemaps[0].draw(screen);
     state.tilemaps[1].draw(screen);
-    state.tilemaps[2].draw(screen);
-    state.tilemaps[3].draw(screen);
-    state.tilemaps[4].draw(screen);
-    state.tilemaps[5].draw(screen);
-    state.tilemaps[6].draw(screen);
-    state.tilemaps[7].draw(screen);
-    state.tilemaps[8].draw(screen);
-    state.tilemaps[9].draw(screen);
-    state.tilemaps[10].draw(screen);
-    state.tilemaps[11].draw(screen);
 }
-
+/*
 fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     // Player control goes here
 
@@ -366,13 +402,13 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
        //prints twice?
        println!("mouse coordinates: ({}, {})", input.mouse().unwrap().0, input.mouse().unwrap().1);
 
-       //tester writing over a whole tilemap
+/*        //tester writing over a whole tilemap
         state.tilemaps[1] = Tilemap::new(
             Vec2i(64, 0),
             (4, 4),
-            &state.tilemaps[1].tileset,
+            &state.tilemaps[0].tileset,
             vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0], //view of opponent
-        );
+        ); */
 
         //coordinates are off
         state.tilemaps[0].set_tile_at(Vec2i(input.mouse().unwrap().0 as i32, input.mouse().unwrap().1 as i32), 12);
@@ -384,3 +420,4 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     if input.key_held(VirtualKeyCode::Up) {}
     if input.key_held(VirtualKeyCode::Down) {}
 }
+ */

@@ -4,12 +4,13 @@ use crate::Screen;
 use std::rc::Rc;
 
 pub const TILE_SZ: usize = 16;
+//pub const TILE_SZ: usize = 32;
 /// A graphical tile, we'll implement Copy since it's tiny
 #[derive(Clone, Copy)]
 pub struct Tile {
     pub oppgrid: bool, //whether tile is part of opponent's grid or player's grid
-    pub opphit: bool, //whether opponent has ship in that tile, switch if it is hit
-    pub myship: bool, // whether player has a ship in that tile, switch if it is hit
+    pub opphit: bool,  //whether opponent has ship in that tile, switch if it is hit
+    pub myship: bool,  // whether player has a ship in that tile, switch if it is hit
 }
 /// A set of tiles used in multiple Tilemaps
 #[derive(Clone)]
@@ -21,9 +22,11 @@ pub struct Tileset {
                               // In this design, each tileset is a distinct image.
                               // Maybe not always the best choice if there aren't many tiles in a tileset!
 }
-/// Indices into a Tileset
+ /// Indices into a Tileset
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct TileID(usize);
+pub struct TileID(usize); 
+/// Indices into a Tileset
+
 
 /// Grab a tile with a given ID
 impl std::ops::Index<TileID> for Tileset {
@@ -92,13 +95,40 @@ impl Tilemap {
             map: map.into_iter().map(TileID).collect(),
         }
     }
-
     //input: window coordinates
     //output: TileID - type of tile at that position in the map
+
     pub fn tile_id_at(&self, Vec2i(x, y): Vec2i) -> TileID {
+
+            // Translate into map coordinates
+            //let x = (x - self.position.0) / TILE_SZ as i32;
+            //let y = (y - self.position.1) / TILE_SZ as i32;
+            let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
+            let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
+            assert!(
+                x >= 0 && x < self.dims.0 as i32,
+                "Tile X coordinate {} out of bounds {}",
+                x,
+                self.dims.0
+            );
+            assert!(
+                y >= 0 && y < self.dims.1 as i32,
+                "Tile Y coordinate {} out of bounds {}",
+                y,
+                self.dims.1
+            );
+            //self.map[y as usize * self.dims.0 + x as usize]
+            self.map[y as usize + x as usize]
+
+    }
+    //input: window coordinates
+    //output: TileID as usize
+    pub fn tile_id_num_at(&self, Vec2i(x, y): Vec2i) -> usize {
         // Translate into map coordinates
-        let x = (x - self.position.0) / TILE_SZ as i32;
-        let y = (y - self.position.1) / TILE_SZ as i32;
+        //t x = (x - self.position.0) / TILE_SZ as i32;
+        //let y = (y - self.position.1) / TILE_SZ as i32;
+        let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
+        let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
         assert!(
             x >= 0 && x < self.dims.0 as i32,
             "Tile X coordinate {} out of bounds {}",
@@ -111,9 +141,9 @@ impl Tilemap {
             y,
             self.dims.1
         );
-        //self.map[y as usize * self.dims.0 + x as usize]
-        self.map[y as usize  + x as usize]
+        (y as usize + x as usize)
     }
+
     pub fn size(&self) -> (usize, usize) {
         self.dims
     }
@@ -125,11 +155,13 @@ impl Tilemap {
     }
 
     pub fn set_tile_at(&mut self, Vec2i(x, y): Vec2i, id: usize) {
-
-    //pub fn set_tile_at(mut self, Vec2i(x, y): Vec2i, id: usize) {
+        //pub fn set_tile_at(mut self, Vec2i(x, y): Vec2i, id: usize) {
         // Translate into map coordinates
-        let x = (x - self.position.0) / TILE_SZ as i32;
-        let y = (y - self.position.1) / TILE_SZ as i32;
+
+        let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
+        let y = (y - self.position.1) / 32 as i32;
+        println!("x: {}, y: {})", x, y);
+
         assert!(
             x >= 0 && x < self.dims.0 as i32,
             "Tile X coordinate {} out of bounds {}",
@@ -143,7 +175,6 @@ impl Tilemap {
             self.dims.1
         );
         self.map[y as usize * self.dims.0 + x as usize] = TileID(id);
-
     }
 
     //from Slack comments
