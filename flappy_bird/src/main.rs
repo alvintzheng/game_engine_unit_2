@@ -205,13 +205,13 @@ fn main() {
         &player_tex,
         Rect {
             x: 0,
-            y: 0,
+            y: 128,
             w: 64,
             h: 64,
         },
         Vec2i(0, 0),
     );
-    let mut player_animation = Animation::new(64, 64, 0, 0, 4);
+    let mut player_animation = Animation::new(64, 64, 0, 128, 4);
     player_sprite.animations.push(player_animation);
     let mut player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 16, h: 16}, vx:0, vy: 0};
     let mut player = Entity::new(player_hitbox, player_sprite, true);
