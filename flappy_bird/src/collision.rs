@@ -37,7 +37,7 @@ struct Contact {
 }
 
 #[allow(dead_code)]
-fn rect_touching(r1: Rect, r2: Rect) -> bool {
+pub fn rect_touching(r1: Rect, r2: Rect) -> bool {
     // r1 left is left of r2 right
     r1.x <= r2.x+r2.w as i32 &&
         // r2 left is left of r1 right

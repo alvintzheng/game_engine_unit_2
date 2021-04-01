@@ -72,6 +72,7 @@ struct GameState {
     player: Entity,
     obstacles: Vec<Entity>,
     accel_down: i32,
+    finished: bool,
     //tiles: Vec<Tilemap>,
 }
 
@@ -87,6 +88,7 @@ impl Mode {
             Mode::Title => {
 
                 if input.key_pressed(VirtualKeyCode::P) {
+                    state.finished = false;
                     Mode::Play(false)
                 }
                 else if input.key_pressed(VirtualKeyCode::O) {
@@ -106,7 +108,10 @@ impl Mode {
                 if !paused {
                     update_game(state, input, data);
                 }
-                if input.key_pressed(VirtualKeyCode::P) {
+                if state.finished {
+                    Mode::Title // should be endgame
+                }
+                else if input.key_pressed(VirtualKeyCode::P) {
                     Mode::Play(!paused)
                 }
                 else if input.key_pressed(VirtualKeyCode::T) {
@@ -224,6 +229,7 @@ fn main() {
         player: player,
         obstacles: obstacles,
         accel_down: 0,
+        finished: false,
         //tiles: tilemaps,
     };
 
@@ -318,7 +324,7 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     }
     let mut accel_down = state.accel_down;
     if input.key_pressed(VirtualKeyCode::Up) {
-        accel_down = -20;
+        accel_down = -12;
     } else {
         accel_down += 1;
         if accel_down > 1 {
@@ -328,11 +334,11 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     state.accel_down = accel_down;
     player.vy += accel_down;
     //clamp velocity since this restitution assumes objects aren't speeding too much
-    if player.vy > 4 {
-        player.vy = 4;
+    if player.vy > 7 {
+        player.vy = 7;
     }
-    if player.vy < -4 {
-        player.vy = -4;
+    if player.vy < -10 {
+        player.vy = -10;
     }
 
     if state.obstacles.len() < MIN_OBSTACLES {
@@ -371,7 +377,16 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     if state.obstacles[0].hitbox.rect.x < 0 - OBSTACLE_WIDTH as i32 {
             let _ = state.obstacles.remove(0);
     }
-    state.player.hitbox.update();
+    player.update();
+    
+    // collisions
+
+    for mut obs in state.obstacles.iter_mut() {
+        if collision::rect_touching(obs.hitbox.rect, player.rect) {
+            state.finished = true;
+            break;
+        }
+    }
 
     for mut obs in state.obstacles.iter_mut() {
         obs.hitbox.update();
