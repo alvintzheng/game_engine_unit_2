@@ -7,6 +7,7 @@ use winit::event::{Event, MouseButton, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
+use rand::{thread_rng, Rng};
 
 // Whoa what's this?
 // Mod without brackets looks for a nearby file.
@@ -32,6 +33,9 @@ use tiles::*;
 struct GameState {
     title_image: Rc<Texture>,
     tilemaps: Vec<Tilemap>, //vector of tilemaps stored in GameState
+    //counts of how many ships sunk on both sides to track for end of game
+    /////////////compsunk
+    ////////////humansunk
 }
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -107,14 +111,22 @@ impl Mode {
                     }
                     Turn::Computer => {
                         println!("computer's turn");
-                        if input.key_pressed(VirtualKeyCode::Q) {
-                            Mode::EndGame
-                        }else if input.key_pressed(VirtualKeyCode::O) {
-                            Mode::Options
-                        }else if input.key_pressed(VirtualKeyCode::S) {
-                            Mode::ScoreBoard
-                        }else {
-                           Mode::Play(Turn::Human)
+                        let xcompguess = thread_rng().gen_range(1, WIDTH) as i32; //change range values
+                        let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT) as i32; //change range values
+                        //hits human's ship
+                        if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
+                            game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
+                            Mode::Play(Turn::Human)
+                            ///////compsunk++
+                        }
+                        //misses human's ship
+                        else if game.tilemaps[1].tile_id_num_at(Vec2i(xcompguess, ycompguess))!=4{
+                            game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
+                            Mode::Play(Turn::Human)
+                        }
+                        //already tried that square (tile 4)
+                        else {
+                           Mode::Play(Turn::Computer) //make another guess
                         }
                     }
                 }
