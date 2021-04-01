@@ -65,20 +65,16 @@ enum Mode {
 }
 
 struct GameState {
-    // What data do we need for this game?  Wall positions?
-    // Colliders?  Sprites and stuff?
-    //animations: Vec<Animation>,
-    //textures: Vec<Rc<Texture>>,
     player: Entity,
     obstacles: Vec<Entity>,
     accel_down: i32,
     finished: bool,
-    //tiles: Vec<Tilemap>,
 }
 
 struct GameData {
     obstacle_tex: Rc<Texture>,
     title_tex: Rc<Texture>,
+    player_tex: Rc<Texture>,
 }
 
 impl Mode {
@@ -109,6 +105,7 @@ impl Mode {
                     update_game(state, input, data);
                 }
                 if state.finished {
+                    *state = new_game(data);
                     Mode::Title // should be endgame
                 }
                 else if input.key_pressed(VirtualKeyCode::P) {
@@ -206,37 +203,17 @@ fn main() {
     let obstacle_tex = Rc::new(Texture::with_file(Path::new("./res/Warp_pipe.png")));
     let title_tex = Rc::new(Texture::with_file(Path::new("./res/TitleImage.png")));
     
-    let mut player_sprite = Sprite::new(
-        &player_tex,
-        Rect {
-            x: 0,
-            y: 128,
-            w: 64,
-            h: 64,
-        },
-        Vec2i(0, 0),
-    );
-    let mut player_animation = Animation::new(64, 64, 0, 128, 4);
-    player_sprite.animations.push(player_animation);
-    let mut player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 16, h: 16}, vx:0, vy: 0};
-    let mut player = Entity::new(player_hitbox, player_sprite, true);
-    
-    let obstacles: Vec<Entity> = vec![];
+
     let mut mode = Mode::Title;
 
-    let mut state = GameState {
-        // initial game state...
-        player: player,
-        obstacles: obstacles,
-        accel_down: 0,
-        finished: false,
-        //tiles: tilemaps,
-    };
 
     let mut data = GameData {
         obstacle_tex: obstacle_tex,
         title_tex: title_tex,
+        player_tex: player_tex,
     };
+
+    let mut state = new_game(&data);
 
     let mut camera_position = Vec2i(0,0);
 
@@ -391,4 +368,34 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     for mut obs in state.obstacles.iter_mut() {
         obs.hitbox.update();
     }
+}
+
+fn new_game(data: &GameData) -> GameState {
+
+    let mut player_sprite = Sprite::new(
+        &data.player_tex,
+        Rect {
+            x: 0,
+            y: 128,
+            w: 64,
+            h: 64,
+        },
+        Vec2i(0, 0),
+    );
+    let mut player_animation = Animation::new(64, 64, 0, 128, 4);
+    player_sprite.animations.push(player_animation);
+    let mut player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 16, h: 16}, vx:0, vy: 0};
+    let mut player = Entity::new(player_hitbox, player_sprite, true);
+    
+    let obstacles: Vec<Entity> = vec![];
+
+    let mut state = GameState {
+        // initial game state...
+        player: player,
+        obstacles: obstacles,
+        accel_down: 0,
+        finished: false,
+        //tiles: tilemaps,
+    };
+    return state;
 }
