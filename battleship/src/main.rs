@@ -49,7 +49,7 @@ enum Mode {
     EndGame,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum Turn {
     Human,
     Computer,
@@ -71,38 +71,55 @@ impl Mode {
                 }
             }
             Mode::Play(pm) => {
-                //move update_game to here
-                //not using pm rn
-                // if let Some(pm) = pm.update(game, input) {
-                //     Mode::Play(pm);
-                // }
-                if input.mouse_pressed(0) {
-                    ////need set tile function to call here
+                match pm {
+                    Turn::Human => {
+                        //move update_game to here
+                        // if let Some(pm) = pm.update(game, input) {
+                        //     Mode::Play(pm);
+                        // }
+                        println!("human's turn");
 
-                    let xcoor = input.mouse().unwrap().0 as i32;
-                    let ycoor = input.mouse().unwrap().1 as i32;
+                        if input.mouse_pressed(0) {
 
-                    //prints twice?
-                    println!("mouse coordinates: ({}, {})", xcoor, ycoor);
-                    println!("tile opp hit bool: {}", game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit);
+                            let xcoor = input.mouse().unwrap().0 as i32;
+                            let ycoor = input.mouse().unwrap().1 as i32;
 
-                    //change tile at coordinates
-                    //was opponent's ship hidden there?
-                    if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
-                        game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8) //hit opponent
-                    } else { //missed
-                        game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 12) //missed opponent
+                            //change tile at coordinates
+                            //was opponent's ship hidden there?
+                            if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
+                                game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8) //hit opponent
+                            } else { //missed
+                                game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 12) //missed opponent
+                            }
+                            if input.key_pressed(VirtualKeyCode::Q) {
+                                Mode::EndGame
+                            }else if input.key_pressed(VirtualKeyCode::O) {
+                                Mode::Options
+                            }else if input.key_pressed(VirtualKeyCode::S) {
+                                Mode::ScoreBoard
+                            }else {
+                               Mode::Play(Turn::Computer)
+                            }
+                        }
+                        else{
+                            Mode::Play(Turn::Human)
+                        }
+                    }
+                    Turn::Computer => {
+                        println!("computer's turn");
+                        if input.key_pressed(VirtualKeyCode::Q) {
+                            Mode::EndGame
+                        }else if input.key_pressed(VirtualKeyCode::O) {
+                            Mode::Options
+                        }else if input.key_pressed(VirtualKeyCode::S) {
+                            Mode::ScoreBoard
+                        }else {
+                           Mode::Play(Turn::Human)
+                        }
                     }
                 }
-                if input.key_pressed(VirtualKeyCode::Q) {
-                    Mode::EndGame
-                }else if input.key_pressed(VirtualKeyCode::O) {
-                    Mode::Options
-                }else if input.key_pressed(VirtualKeyCode::S) {
-                    Mode::ScoreBoard
-                } else {
-                    Mode::Play(pm)
-                }
+
+                
             }
             Mode::Options => {
                 if input.key_pressed(VirtualKeyCode::Q) {
