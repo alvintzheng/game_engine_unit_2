@@ -81,9 +81,11 @@ impl Mode {
                         // if let Some(pm) = pm.update(game, input) {
                         //     Mode::Play(pm);
                         // }
-                        println!("human's turn");
+
 
                         if input.mouse_pressed(0) {
+                            
+                            println!("human's turn");
 
                             let xcoor = input.mouse().unwrap().0 as i32;
                             let ycoor = input.mouse().unwrap().1 as i32;
@@ -111,8 +113,16 @@ impl Mode {
                     }
                     Turn::Computer => {
                         println!("computer's turn");
-                        let xcompguess = thread_rng().gen_range(1, WIDTH) as i32; //change range values
-                        let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT) as i32; //change range values
+
+                        //if guesses.smartguessing(){
+                            //guesses.makeguess()
+                        }
+
+                        //else
+
+                        //random guess
+                        let xcompguess = thread_rng().gen_range(1, WIDTH) as i32; 
+                        let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT) as i32; 
                         //hits human's ship
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
                             game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
