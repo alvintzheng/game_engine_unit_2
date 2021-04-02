@@ -118,7 +118,7 @@ impl Mode {
                             //Vec2i theguess= guesses.makeguess()
                             //game.tilemaps[1].set_tile_at(theguess, 4);
                             //return array of guesses to make instead of just one at a time?
-                        }
+                        //}
 
                         //else
 
