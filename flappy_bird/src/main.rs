@@ -10,11 +10,13 @@ use pixels::{Pixels, SurfaceTexture};
 use std::path::Path;
 use std::rc::Rc;
 use std::time::Instant;
+use std::collections::HashMap;
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
+use fontdue::Font;
 
 use rand::{thread_rng, Rng};
 
@@ -69,12 +71,16 @@ struct GameState {
     obstacles: Vec<Entity>,
     accel_down: i32,
     finished: bool,
+    score: usize,
+    score_tex: Rc<Texture>,
 }
 
 struct GameData {
     obstacle_tex: Rc<Texture>,
     title_tex: Rc<Texture>,
     player_tex: Rc<Texture>,
+    font: fontdue::Font,
+    // should not use hashmap? because result of get() will be option?
 }
 
 impl Mode {
@@ -144,7 +150,7 @@ impl Mode {
             }
         }
     }
-    fn display(&self, state: &mut GameState, data: &GameData, screen: &mut Screen) {
+    fn display(&self, state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
         match self {
             Mode::Title => {
                 //draw a (static?) title
@@ -162,7 +168,7 @@ impl Mode {
                 screen.clear(Rgba(80, 80, 80, 255));
 
                 //draw each tilemap in vector to screen
-                draw_game(state, screen);
+                draw_game(state, data, screen);
             }
             Mode::Options => {
                 screen.clear(Rgba(80, 255, 255, 255));
@@ -205,16 +211,21 @@ fn main() {
     
 
     let mut mode = Mode::Title;
-
+    let font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
+    let settings = fontdue::FontSettings {
+        scale: 12.0,
+        ..fontdue::FontSettings::default()
+    };
+    let font = fontdue::Font::from_bytes(font, settings).unwrap();
 
     let mut data = GameData {
         obstacle_tex: obstacle_tex,
         title_tex: title_tex,
         player_tex: player_tex,
+        font: font,
     };
 
     let mut state = new_game(&data);
-
     let mut camera_position = Vec2i(0,0);
 
     // How many frames have we simulated?
@@ -223,8 +234,7 @@ fn main() {
     let mut available_time = 0.0;
     // Track beginning of play
     let start = Instant::now();
-    //let mut contacts = vec![];
-    //let mut mobiles = [player, mover];
+
     // Track end of the last frame
     let mut since = Instant::now();
     event_loop.run(move |event, _, control_flow| {
@@ -276,13 +286,21 @@ fn main() {
     });
 }
 
-fn draw_game(state: &mut GameState, screen: &mut Screen) {
+fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
     // Call screen's drawing methods to render the game state
     screen.clear(Rgba(80, 80, 80, 255));
+    //draw score
+    
+    let score_rect = Rect{x: 0, y: 0, w: state.score_tex.width as u16, h: state.score_tex.height as u16};
+    let score_pos = Vec2i((WIDTH / 2) as i32, 10);
+    screen.bitblt(&state.score_tex, score_rect, score_pos);
+    
     for obs in state.obstacles.iter_mut() {
         screen.draw_entity(obs);
     }
     screen.draw_entity(&mut state.player);
+
+    
 }
 
 
@@ -353,19 +371,22 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     // check front pipe to see if it needs to be deleted
     if state.obstacles[0].hitbox.rect.x < 0 - OBSTACLE_WIDTH as i32 {
             let _ = state.obstacles.remove(0);
+            state.score += 1;
+            state.score_tex = create_score_tex(&data.font, state.score);
+            println!("score: {}",state.score);
     }
     player.update();
     
     // collisions
 
-    for mut obs in state.obstacles.iter_mut() {
+    for obs in state.obstacles.iter_mut() {
         if collision::rect_touching(obs.hitbox.rect, player.rect) {
             state.finished = true;
             break;
         }
     }
 
-    for mut obs in state.obstacles.iter_mut() {
+    for obs in state.obstacles.iter_mut() {
         obs.hitbox.update();
     }
 }
@@ -390,12 +411,32 @@ fn new_game(data: &GameData) -> GameState {
     let obstacles: Vec<Entity> = vec![];
 
     let mut state = GameState {
-        // initial game state...
+        // initial game state
         player: player,
         obstacles: obstacles,
         accel_down: 0,
         finished: false,
-        //tiles: tilemaps,
+        score: 10,
+        score_tex: create_score_tex(&data.font, 0),
     };
     return state;
+}
+
+fn create_score_tex(font: &fontdue::Font, score: usize) -> Rc<Texture> {
+    let font_size = 20.0;
+    let score_string = score.to_string();
+    let mut digit_textures: Vec<Texture> = vec![];
+    let mut i = 0;
+    while i < score_string.len() {
+        let digit = score_string.chars().nth(i).unwrap();
+        let (metrics, bitmap) = font.rasterize(digit, font_size);
+        let mut score_tex = Texture::from_vec(bitmap, metrics.width, metrics.height, 1);
+        score_tex.convert_to_rgba();
+        digit_textures.push(score_tex);
+        i += 1;
+    }
+
+    
+    
+    return Rc::new(texture::stack_horizontal(digit_textures));
 }

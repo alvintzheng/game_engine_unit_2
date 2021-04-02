@@ -19,29 +19,29 @@ impl<'fb> Screen<'fb> {
             position
         }
     }
-    pub fn size(&self) -> (usize, usize) {
-        (self.width, self.height)
-    }
+    // pub fn size(&self) -> (usize, usize) {
+    //     (self.width, self.height)
+    // }
     pub fn bounds(&self) -> Rect {
         Rect{x:self.position.0, y:self.position.1, w:self.width as u16, h:self.height as u16}
     }
     // Our old, slow friend draw_at, now with super scrolling powers!
-    #[inline(always)]
-    pub fn draw_at(&mut self, col: Rgba, Vec2i(x,y) : Vec2i) {
-        let x = x - self.position.0;
-        let y = y - self.position.1;
-        // The rest is about the same
-        if x < 0 || (self.width as i32) <= x || y < 0 || (self.height as i32) <= y {
-            return;
-        }
-        assert_eq!(self.depth, 4);
-        // Now x and y are within framebuffer bounds so go ahead and draw
-        let c = [col.0, col.1, col.2, col.3];
-        let idx = y * self.width as i32 * self.depth as i32 + x * self.depth as i32;
-        assert!(idx>=0);
-        let idx = idx as usize;
-        self.framebuffer[idx..(idx+self.depth)].copy_from_slice(&c);
-    }
+    // #[inline(always)]
+    // pub fn draw_at(&mut self, col: Rgba, Vec2i(x,y) : Vec2i) {
+    //     let x = x - self.position.0;
+    //     let y = y - self.position.1;
+    //     // The rest is about the same
+    //     if x < 0 || (self.width as i32) <= x || y < 0 || (self.height as i32) <= y {
+    //         return;
+    //     }
+    //     assert_eq!(self.depth, 4);
+    //     // Now x and y are within framebuffer bounds so go ahead and draw
+    //     let c = [col.0, col.1, col.2, col.3];
+    //     let idx = y * self.width as i32 * self.depth as i32 + x * self.depth as i32;
+    //     assert!(idx>=0);
+    //     let idx = idx as usize;
+    //     self.framebuffer[idx..(idx+self.depth)].copy_from_slice(&c);
+    // }
     // Clear's the same...
     pub fn clear(&mut self, col: Rgba) {
         let c = [col.0, col.1, col.2, col.3];

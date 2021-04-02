@@ -25,3 +25,16 @@ impl<'fb> DrawEntityExt for Screen<'fb> {
         self.draw_sprite(&mut e.sprite);
     }
 }
+
+// pub struct Bird {
+//     pub body: Entity,
+//     pub wing: Sprite,
+// }
+
+// impl Bird {
+//     pub fn new(hitbox:Mobile, sprite:Sprite, gravity:bool) -> Self {
+//         Self {hitbox, sprite, gravity}
+//     }
+// }
+
+//implement drawbird so that wing position depends on body position
