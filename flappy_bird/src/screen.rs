@@ -8,6 +8,7 @@ pub struct Screen<'fb> {
     depth: usize,
     position: Vec2i,
 }
+#[allow(dead_code)]
 impl<'fb> Screen<'fb> {
     // Call =wrap= every frame; that means the camera position will need to be stored in the game state
     pub fn wrap(framebuffer: &'fb mut [u8], width: usize, height: usize, depth: usize, position:Vec2i) -> Self {

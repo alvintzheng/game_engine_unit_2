@@ -17,6 +17,7 @@ pub struct Animation {
     frame_duration: Duration,
     last_frame_time: SystemTime,
     active: bool,
+    pub do_loop: bool,
 }
 
 #[allow(dead_code)]
@@ -38,6 +39,7 @@ impl Animation {
             frame_duration: Duration::from_millis(500),
             last_frame_time: SystemTime::now(),
             active: false,
+            do_loop: true,
         }
     }
     pub fn set_duration(&mut self, duration: Duration) {
@@ -56,8 +58,15 @@ impl Animation {
         match time_elapsed {
             Ok(duration) => {if duration.as_millis() > self.frame_duration.as_millis() {
                 self.last_frame_time = now;
-                self.current_frame = (self.current_frame + 1) % self.frame_count;}},
-            Err(error) => {println!("oops");},
+                if self.do_loop {
+                    self.current_frame = (self.current_frame + 1) % self.frame_count;
+                } else {
+                    if self.current_frame < self.frame_count - 1 {
+                        self.current_frame += 1;
+                    }
+                }
+                }},
+            Err(_) => {println!("oops");},
         }
     }
 }

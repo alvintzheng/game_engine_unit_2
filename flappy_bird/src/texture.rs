@@ -8,11 +8,12 @@ pub struct Texture {
     pub height: usize,
     pub depth: usize,
 }
-
+#[allow(dead_code)]
 enum AlphaChannel {
     First,
     Last,
 }
+#[allow(dead_code)]
 impl Texture {
     pub fn with_file(path: &Path) -> Self {
         Self::new(image::open(path).expect("Couldn't load image").into_rgba8())
@@ -81,8 +82,8 @@ pub fn stack_horizontal(textures: Vec<Texture>) -> Texture {
     
     let mut row = 0;
     let mut texture = 0;
-    let mut column = 0;
-    let mut channel = 0;
+    let mut column;
+    let mut channel;
     let mut total_width = 0;
     let mut min_height = textures[0].height;
     //let mut current_col_start = 0;

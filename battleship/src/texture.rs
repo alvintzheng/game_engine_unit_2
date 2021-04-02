@@ -13,6 +13,8 @@ enum AlphaChannel {
     First,
     Last,
 }
+
+#[allow(dead_code)]
 impl Texture {
     pub fn with_file(path: &Path) -> Self {
         Self::new(image::open(path).expect("Couldn't load image").into_rgba8())

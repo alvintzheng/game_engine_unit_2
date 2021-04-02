@@ -10,13 +10,11 @@ use pixels::{Pixels, SurfaceTexture};
 use std::path::Path;
 use std::rc::Rc;
 use std::time::Instant;
-use std::collections::HashMap;
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
-use fontdue::Font;
 use std::time::{Duration};
 
 use rand::{thread_rng, Rng};
@@ -68,7 +66,7 @@ enum Mode {
 }
 
 struct GameState {
-    player: Entity,
+    player: Bird,
     obstacles: Vec<Entity>,
     accel_down: i32,
     finished: bool,
@@ -80,6 +78,7 @@ struct GameData {
     obstacle_tex: Rc<Texture>,
     title_tex: Rc<Texture>,
     player_tex: Rc<Texture>,
+    wing_tex: Rc<Texture>,
     font: fontdue::Font,
     // should not use hashmap? because result of get() will be option?
 }
@@ -209,6 +208,7 @@ fn main() {
     let player_tex = Rc::new(Texture::with_file(Path::new("./res/bird.png")));
     let obstacle_tex = Rc::new(Texture::with_file(Path::new("./res/Warp_pipe.png")));
     let title_tex = Rc::new(Texture::with_file(Path::new("./res/TitleImage.png")));
+    let wing_tex = Rc::new(Texture::with_file(Path::new("./res/wings.png")));
     
 
     let mut mode = Mode::Title;
@@ -224,10 +224,11 @@ fn main() {
         title_tex: title_tex,
         player_tex: player_tex,
         font: font,
+        wing_tex: wing_tex,
     };
 
     let mut state = new_game(&data);
-    let mut camera_position = Vec2i(0,0);
+    let camera_position = Vec2i(0,0);
 
     // How many frames have we simulated?
     let mut frame_count: usize = 0;
@@ -299,17 +300,17 @@ fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
     for obs in state.obstacles.iter_mut() {
         screen.draw_entity(obs);
     }
-    state.player.sprite.animations[0].current_frame = scale_range(state.player.hitbox.vy, -4.0, 10.0, 0.0, 4.0) as u16;
-    screen.draw_entity(&mut state.player);
+    state.player.body.sprite.animations[0].current_frame = scale_range(state.player.body.hitbox.vy, -10.0, 7.0, 0.0, 4.0) as u16;
+    screen.draw_bird(&mut state.player);
 
     
 }
 
 
 fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData) {
-    let player = &mut state.player.hitbox;
+    let player = &mut state.player.body.hitbox;
     // Determine player velocity
-    let movespeed: i32 = 2;
+    //let movespeed: i32 = 2;
     if input.key_held(VirtualKeyCode::Left) {
         //player.vx = -1 * movespeed;
     } else if input.key_held(VirtualKeyCode::Right) {
@@ -322,8 +323,11 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     let mut accel_down = state.accel_down;
     if input.key_pressed(VirtualKeyCode::Up) {
         accel_down = -12;
+        //player.vy -= 40; //nethod 2
+        state.player.wing.animations[0].current_frame = 0;
     } else {
         accel_down += 1;
+        //player.vy += 3; //method 2
         if accel_down > 1 {
             accel_down = 1;
         }
@@ -343,7 +347,7 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
         if state.obstacles.len() == 0 || WIDTH as i32 - state.obstacles[state.obstacles.len() - 1].hitbox.rect.x - (OBSTACLE_WIDTH as i32) >= OBSTACLE_SPACING as i32 {
             //println!("creating obstacle");
             let new_height = thread_rng().gen_range(OBSTACLE_MIN_HEIGHT, OBSTACLE_MAX_HEIGHT);
-            let mut new_hitbox = Mobile {
+            let new_hitbox = Mobile {
                 rect: Rect {
                     x: WIDTH as i32 - OBSTACLE_WIDTH as i32,
                     y: HEIGHT as i32 - new_height as i32,
@@ -363,9 +367,9 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
                 },
                 Vec2i(0, 0),
             );
-            let mut new_animation = Animation::new(OBSTACLE_WIDTH, new_height as u16, 0, 0, 1);
+            let new_animation = Animation::new(OBSTACLE_WIDTH, new_height as u16, 0, 0, 1);
             new_sprite.animations.push(new_animation);
-            let mut new_obstacle = Entity::new(new_hitbox, new_sprite, false);
+            let new_obstacle = Entity::new(new_hitbox, new_sprite, false);
             state.obstacles.push(new_obstacle);
         }
     }
@@ -408,12 +412,27 @@ fn new_game(data: &GameData) -> GameState {
     let mut player_animation = Animation::new(64, 64, 0, 0, 5);
     player_animation.set_duration(Duration::new(3600, 0));
     player_sprite.animations.push(player_animation);
-    let mut player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 64, h: 64}, vx:0, vy: 0};
-    let mut player = Entity::new(player_hitbox, player_sprite, true);
+    let player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 64, h: 64}, vx:0, vy: 0};
+    let body = Entity::new(player_hitbox, player_sprite, true);
+    let mut wing = Sprite::new(
+        &data.wing_tex,
+        Rect {
+            x: 0,
+            y: 128,
+            w: 64,
+            h: 64,
+        },
+        Vec2i(0, 0),
+    );
+    let mut wing_animation = Animation::new(44, 96, 0, 0, 9);
+    wing_animation.set_duration(Duration::from_millis(30));
+    wing_animation.do_loop = false;
+    wing.animations.push(wing_animation);
+    let player = Bird{body: body, wing: wing};
     
     let obstacles: Vec<Entity> = vec![];
 
-    let mut state = GameState {
+    let state = GameState {
         // initial game state
         player: player,
         obstacles: obstacles,
@@ -438,8 +457,6 @@ fn create_score_tex(font: &fontdue::Font, score: usize) -> Rc<Texture> {
         digit_textures.push(score_tex);
         i += 1;
     }
-
-    
     
     return Rc::new(texture::stack_horizontal(digit_textures));
 }
