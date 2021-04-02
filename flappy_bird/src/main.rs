@@ -17,6 +17,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 use fontdue::Font;
+use std::time::{Duration};
 
 use rand::{thread_rng, Rng};
 
@@ -205,7 +206,7 @@ fn main() {
     };
 
     //load assets
-    let player_tex = Rc::new(Texture::with_file(Path::new("./res/sprites.png")));
+    let player_tex = Rc::new(Texture::with_file(Path::new("./res/bird.png")));
     let obstacle_tex = Rc::new(Texture::with_file(Path::new("./res/Warp_pipe.png")));
     let title_tex = Rc::new(Texture::with_file(Path::new("./res/TitleImage.png")));
     
@@ -298,6 +299,7 @@ fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
     for obs in state.obstacles.iter_mut() {
         screen.draw_entity(obs);
     }
+    state.player.sprite.animations[0].current_frame = scale_range(state.player.hitbox.vy, -4.0, 10.0, 0.0, 4.0) as u16;
     screen.draw_entity(&mut state.player);
 
     
@@ -403,9 +405,10 @@ fn new_game(data: &GameData) -> GameState {
         },
         Vec2i(0, 0),
     );
-    let mut player_animation = Animation::new(64, 64, 0, 128, 4);
+    let mut player_animation = Animation::new(64, 64, 0, 0, 5);
+    player_animation.set_duration(Duration::new(3600, 0));
     player_sprite.animations.push(player_animation);
-    let mut player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 16, h: 16}, vx:0, vy: 0};
+    let mut player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 64, h: 64}, vx:0, vy: 0};
     let mut player = Entity::new(player_hitbox, player_sprite, true);
     
     let obstacles: Vec<Entity> = vec![];
@@ -439,4 +442,16 @@ fn create_score_tex(font: &fontdue::Font, score: usize) -> Rc<Texture> {
     
     
     return Rc::new(texture::stack_horizontal(digit_textures));
+}
+
+fn scale_range(value: i32, value_min: f32, value_max: f32, scale_min:f32, scale_max:f32) -> i32{
+    let mut scaled: f32 = value as f32;
+    scaled = (scaled - value_min) / (value_max - value_min) * (scale_max - scale_min) + scale_min;
+    if scaled < scale_min {
+        scaled = scale_min;
+    }
+    if scaled > scale_max {
+        scaled = scale_max;
+    }
+    return scaled as i32;
 }

@@ -40,6 +40,9 @@ impl Animation {
             active: false,
         }
     }
+    pub fn set_duration(&mut self, duration: Duration) {
+        self.frame_duration = duration;
+    }
 
     pub fn calc_frame(&self) -> Rect {
         let x_pos = self.start_x + (self.current_frame as i32) * (self.frame_width as i32);
