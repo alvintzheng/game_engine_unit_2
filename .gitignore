@@ -1,6 +1,7 @@
 *
 !*/
 !*.rs
+!*.ttf
 !*.toml
 !*.png
 *count.rs
