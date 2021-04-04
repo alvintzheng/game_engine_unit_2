@@ -94,6 +94,7 @@ struct GameData {
     font: fontdue::Font,
     sound: Sound,
     sky_tex: Rc<Texture>,
+    highscore: usize,
     // should not use hashmap? because result of get() will be option?
 }
 
@@ -125,7 +126,9 @@ impl Mode {
                     update_game(state, input, data);
                 }
                 if state.finished {
-                    
+                    if data.highscore < state.score {
+                        data.highscore = state.score;
+                    }
                     Mode::EndGame // should be endgame
                 }
                 else if input.key_pressed(VirtualKeyCode::P) {
@@ -158,6 +161,10 @@ impl Mode {
                 if input.key_pressed(VirtualKeyCode::T) {
                     Mode::Title
                 }
+                else if input.key_pressed(VirtualKeyCode::P) {
+                    *state = new_game(data);
+                    Mode::Play(false)
+                }
                 else {
                     self
                 }
@@ -175,7 +182,7 @@ impl Mode {
                     w: 250,
                     h: 51,
                 };
-                screen.bitblt(&data.title_tex, display_rect, Vec2i(0, 0));
+                screen.bitblt(&data.title_tex, display_rect, Vec2i(275, 224));
             }
             Mode::Play(paused) => {
                 // Call screen's drawing methods to render the game state
@@ -189,6 +196,11 @@ impl Mode {
             }
             Mode::ScoreBoard => {
                 screen.clear(Rgba(255, 80, 255, 255));
+                let highscore_tex = create_text_tex(&data.font, "Highscore:".to_string() + &data.highscore.to_string());
+                // todo: change stack_horizontal to fill space rather than take shortest character
+                let from_rect = Rect{x: 0, y: 0, w: highscore_tex.width as u16, h: highscore_tex.height as u16};
+                let to_pos = Vec2i((WIDTH + highscore_tex.width) as i32 / 2, (HEIGHT + highscore_tex.height) as i32 / 2);
+                screen.bitblt(&highscore_tex, from_rect, to_pos);
             }
             Mode::EndGame => { // Draw game result?
                 screen.clear(Rgba(255, 255, 80, 255));
@@ -242,8 +254,6 @@ fn main() {
         font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
       }
     
-    
-    
     let settings = fontdue::FontSettings {
         scale: 12.0,
         ..fontdue::FontSettings::default()
@@ -259,6 +269,7 @@ fn main() {
         wing_tex: wing_tex,
         sound: game_sound,
         sky_tex: sky_tex,
+        highscore: 0,
     };
 
     let mut state = new_game(&data);
@@ -563,6 +574,21 @@ fn create_score_tex(font: &fontdue::Font, score: usize) -> Rc<Texture> {
     }
     
     return Rc::new(texture::stack_horizontal(digit_textures));
+}
+
+fn create_text_tex(font: &fontdue::Font, text: String) -> Rc<Texture> {
+    let font_size = 30.0;
+    let mut char_textures: Vec<Texture> = vec![];
+    let mut i = 0;
+    while i < text.len() {
+        let character = text.chars().nth(i).unwrap();
+        let (metrics, bitmap) = font.rasterize(character, font_size);
+        let mut char_tex = Texture::from_vec(bitmap, metrics.width, metrics.height, 1);
+        char_tex.convert_to_rgba();
+        char_textures.push(char_tex);
+        i += 1;
+    }
+    return Rc::new(texture::stack_horizontal(char_textures));
 }
 
 fn scale_range(value: i32, value_min: f32, value_max: f32, scale_min:f32, scale_max:f32) -> i32{
