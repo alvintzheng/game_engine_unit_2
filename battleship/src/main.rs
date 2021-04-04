@@ -11,6 +11,7 @@ use rand::{thread_rng, Rng};
 extern crate savefile;
 use savefile::prelude::*;
 
+
 #[macro_use]
 extern crate savefile_derive;
 
@@ -294,6 +295,9 @@ impl Mode {
             }
             Mode::ScoreBoard => {
                 screen.clear(Rgba(255, 80, 255, 255));
+                // Creates a dialog with a single "Quit" button
+                
+
             }
             Mode::Reset => {
                 screen.clear(Rgba(0, 0, 0, 255));
@@ -314,6 +318,8 @@ fn load_game() -> GameState {
 } 
 
 fn main() {
+    
+    
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
@@ -481,6 +487,8 @@ fn main() {
     // Track end of the last frame
     let mut since = Instant::now();
     event_loop.run(move |event, _, control_flow| {
+
+
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
             let mut screen = Screen::wrap(pixels.get_frame(), WIDTH, HEIGHT, DEPTH);
