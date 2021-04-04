@@ -224,7 +224,7 @@ fn main() {
     game_sound.add_sound("die".to_string(), "./res/die.mp3".to_string());
 
     let mut mode = Mode::Title;
-    let font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
+    let font = include_bytes!("./res/Exo2-Regular.ttf");
     let settings = fontdue::FontSettings {
         scale: 12.0,
         ..fontdue::FontSettings::default()
