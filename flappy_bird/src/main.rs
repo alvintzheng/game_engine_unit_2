@@ -212,7 +212,7 @@ fn main() {
     
 
     let mut mode = Mode::Title;
-    let font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
+    let font = include_bytes!("./res/Exo2-Regular.ttf");
     let settings = fontdue::FontSettings {
         scale: 12.0,
         ..fontdue::FontSettings::default()

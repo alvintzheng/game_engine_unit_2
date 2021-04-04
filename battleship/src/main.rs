@@ -34,8 +34,8 @@ struct GameState {
     title_image: Rc<Texture>,
     tilemaps: Vec<Tilemap>, //vector of tilemaps stored in GameState
     //counts of how many ships sunk on both sides to track for end of game
-    /////////////compsunk
-    ////////////humansunk
+    compsunk: usize,
+    humansunk: usize,
 }
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -82,6 +82,12 @@ impl Mode {
                         //     Mode::Play(pm);
                         // }
 
+                        //check if computer won
+                        if game.humansunk == 2 { 
+                            Mode::EndGame;
+                            println!("You lost!")
+                        }
+
 
                         if input.mouse_pressed(0) {
                             
@@ -93,10 +99,21 @@ impl Mode {
                             //change tile at coordinates
                             //was opponent's ship hidden there?
                             if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
+                                game.compsunk = game.compsunk + 1;
+                                println!("compsunk: {}", game.compsunk);
                                 game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8) //hit opponent
                             } else { //missed
                                 game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 12) //missed opponent
                             }
+
+                            //check if human won
+                            //endgame doesnt work
+                            if game.compsunk == 2 {
+                                Mode::EndGame;
+                                println!("You won!")
+                            }
+
+                            //these dont respond anymore
                             if input.key_pressed(VirtualKeyCode::Q) {
                                 Mode::EndGame
                             }else if input.key_pressed(VirtualKeyCode::O) {
@@ -112,6 +129,7 @@ impl Mode {
                         }
                     }
                     Turn::Computer => {
+
                         println!("computer's turn");
 
                         //if guesses.smartguessing(){
@@ -359,11 +377,13 @@ fn main() {
     );
 
     let mut mode = Mode::Title;
-
+    
+    // initial game state...
     let mut state = GameState {
-        // initial game state...
         tilemaps: vec![oppmap, mymap], //vector of tilemaps
         title_image: title_image,
+        compsunk: 0,
+        humansunk: 0,
     };
 
     // How many frames have we simulated?
