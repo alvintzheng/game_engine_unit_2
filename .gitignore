@@ -4,4 +4,5 @@
 !*.ttf
 !*.toml
 !*.png
+!*.mp3
 *count.rs
