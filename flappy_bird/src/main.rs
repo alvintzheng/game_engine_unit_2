@@ -35,6 +35,8 @@ mod entity;
 use entity::*;
 mod sound;
 use sound::Sound;
+mod tiles;
+use tiles::*;
 
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -58,7 +60,10 @@ const OBSTACLE_MIN_HEIGHT: u16 = 50;
 const OBSTACLE_MAX_HEIGHT: u16 = (HEIGHT - GAP_HEIGHT) as u16 - OBSTACLE_MIN_HEIGHT;
 const OBSTACLE_SPEED: u16 = 4;
 const MIN_OBSTACLES: usize = (WIDTH / (OBSTACLE_SPACING + OBSTACLE_WIDTH) as usize) * 2 + 1;
-
+const BACKGROUND_SPEED: u16 = 1;
+const MAP_WIDTH: usize = WIDTH / tiles::TILE_SZ + 1;
+const MAP_HEIGHT: usize = HEIGHT / tiles::TILE_SZ + 1;
+const MAP_SIZE: usize = MAP_WIDTH * MAP_HEIGHT;
 
 #[derive(Debug, Copy, Clone)]
 enum Mode {
@@ -76,6 +81,8 @@ struct GameState {
     finished: bool,
     score: usize,
     score_tex: Rc<Texture>,
+    tilemaps: Vec<Tilemap>,
+    walls: Vec<Wall>,
 }
 
 struct GameData {
@@ -86,6 +93,7 @@ struct GameData {
     wing_tex: Rc<Texture>,
     font: fontdue::Font,
     sound: Sound,
+    sky_tex: Rc<Texture>,
     // should not use hashmap? because result of get() will be option?
 }
 
@@ -96,7 +104,7 @@ impl Mode {
             Mode::Title => {
 
                 if input.key_pressed(VirtualKeyCode::P) {
-                    state.finished = false;
+                    *state = new_game(data);
                     Mode::Play(false)
                 }
                 else if input.key_pressed(VirtualKeyCode::O) {
@@ -117,8 +125,8 @@ impl Mode {
                     update_game(state, input, data);
                 }
                 if state.finished {
-                    *state = new_game(data);
-                    Mode::Title // should be endgame
+                    
+                    Mode::EndGame // should be endgame
                 }
                 else if input.key_pressed(VirtualKeyCode::P) {
                     Mode::Play(!paused)
@@ -184,6 +192,7 @@ impl Mode {
             }
             Mode::EndGame => { // Draw game result?
                 screen.clear(Rgba(255, 255, 80, 255));
+                draw_game(state, data, screen);
             }
         }
     }
@@ -216,6 +225,7 @@ fn main() {
     let obstacle_tex_down = Rc::new(Texture::with_file(Path::new("./res/pipe_down.png")));
     let title_tex = Rc::new(Texture::with_file(Path::new("./res/TitleImage.png")));
     let wing_tex = Rc::new(Texture::with_file(Path::new("./res/wings.png")));
+    let sky_tex = Rc::new(Texture::with_file(Path::new("./res/flappy_sky.png")));
 
     let mut game_sound = Sound::new();
     let _ = game_sound.init_manager();
@@ -224,7 +234,16 @@ fn main() {
     game_sound.add_sound("die".to_string(), "./res/die.mp3".to_string());
 
     let mut mode = Mode::Title;
-    let font = include_bytes!("./res/Exo2-Regular.ttf");
+    let mut font:&[u8];// = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
+
+    if cfg!(target_os = "macos") {
+        font = include_bytes!("../res/Exo2-Regular.ttf");
+      } else {
+        font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
+      }
+    
+    
+    
     let settings = fontdue::FontSettings {
         scale: 12.0,
         ..fontdue::FontSettings::default()
@@ -239,6 +258,7 @@ fn main() {
         font: font,
         wing_tex: wing_tex,
         sound: game_sound,
+        sky_tex: sky_tex,
     };
 
     let mut state = new_game(&data);
@@ -305,6 +325,14 @@ fn main() {
 fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
     // Call screen's drawing methods to render the game state
     screen.clear(Rgba(80, 80, 80, 255));
+
+    for tilemap in state.tilemaps.iter() {
+        tilemap.draw(screen);
+    }
+
+    for obs in state.obstacles.iter_mut() {
+        screen.draw_entity(obs);
+    }
     //draw score
     
     let score_rect = Rect{x: (WIDTH / 2 - 70) as i32, y: 0, w: 160, h: 30};
@@ -315,9 +343,7 @@ fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
     
     screen.bitblt(&state.score_tex, score_text_rect, score_text_pos);
     
-    for obs in state.obstacles.iter_mut() {
-        screen.draw_entity(obs);
-    }
+    
     state.player.body.sprite.animations[0].current_frame = scale_range(state.player.body.hitbox.vy, -10.0, 7.0, 0.0, 4.0) as u16;
     screen.draw_bird(&mut state.player);
 
@@ -434,7 +460,15 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
     
     // collisions
 
-    for obs in state.obstacles.iter_mut() {
+    for wall in state.walls.iter() {
+        if collision::rect_touching(wall.rect, player.rect) {
+            state.finished = true;
+            data.sound.play_sound("die".to_string());
+            break;
+        }
+    }
+
+    for obs in state.obstacles.iter() {
         if collision::rect_touching(obs.hitbox.rect, player.rect) {
             state.finished = true;
             data.sound.play_sound("die".to_string());
@@ -444,6 +478,18 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
 
     for obs in state.obstacles.iter_mut() {
         obs.hitbox.update();
+    }
+
+    for tm in state.tilemaps.iter_mut() {
+        tm.position.0 -= BACKGROUND_SPEED as i32;
+    }
+    if (state.tilemaps[0].position.0 + (state.tilemaps[0].dims.0 * tiles::TILE_SZ) as i32) < 0 {
+        state.tilemaps.remove(0);
+    }
+    if state.tilemaps.len() < 2 {
+        let mut new_tilemap = new_sky(data);
+        new_tilemap.position = Vec2i((MAP_WIDTH * tiles::TILE_SZ) as i32, 0);
+        state.tilemaps.push(new_tilemap);
     }
 }
 
@@ -481,6 +527,12 @@ fn new_game(data: &GameData) -> GameState {
     let player = Bird{body: body, wing: wing};
     
     let obstacles: Vec<Entity> = vec![];
+    let mut tilemaps: Vec<Tilemap> = vec![];
+    let sky1 = new_sky(data);
+    tilemaps.push(sky1);
+    let mut walls: Vec<Wall> = vec![];
+    walls.push(Wall{rect:Rect{x: 0, y: -1, w: WIDTH as u16, h: 1}});
+    walls.push(Wall{rect:Rect{x: 0, y: HEIGHT as i32, w: WIDTH as u16, h: 1}});
 
     let state = GameState {
         // initial game state
@@ -490,6 +542,8 @@ fn new_game(data: &GameData) -> GameState {
         finished: false,
         score: 0,
         score_tex: create_score_tex(&data.font, 0),
+        tilemaps: tilemaps,
+        walls: walls,
     };
     return state;
 }
@@ -521,4 +575,28 @@ fn scale_range(value: i32, value_min: f32, value_max: f32, scale_min:f32, scale_
         scaled = scale_max;
     }
     return scaled as i32;
+}
+
+fn new_sky(data: &GameData) -> Tilemap {
+    let position = Vec2i(0, 0);
+    let tile_types = 16;
+    let dims = (MAP_WIDTH, MAP_HEIGHT);
+    let mut tiles:Vec<Tile> = vec![];
+    let mut i = 0;
+    while i < tile_types {
+        let new_tile = Tile{oppgrid: true, opphit: false, myship: false};
+        tiles.push(new_tile);
+        i += 1;
+    }
+    let tileset = Tileset::new(tiles, &data.sky_tex);
+    let mut map:Vec<usize> = vec![];
+    i = 0;
+    
+    while i < MAP_SIZE {
+        let new_tile_id = thread_rng().gen_range(0, tile_types);
+        map.push(new_tile_id);
+        i += 1;
+    }
+    
+    return Tilemap::new(position, dims, &Rc::new(tileset), map);
 }

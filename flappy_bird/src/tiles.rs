@@ -69,7 +69,7 @@ pub struct Tilemap {
     /// Where the tilemap is in space, use your favorite number type here
     pub position: Vec2i,
     /// How big it is
-    dims: (usize, usize),
+    pub dims: (usize, usize),
     /// Which tileset is used for this tilemap
     pub tileset: Rc<Tileset>,
     /// A row-major grid of tile IDs in tileset

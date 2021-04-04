@@ -1,8 +1,8 @@
 use crate::types::*;
 
 
-struct Wall {
-    rect: Rect,
+pub struct Wall {
+    pub rect: Rect,
 }
 
 pub struct Mobile {
