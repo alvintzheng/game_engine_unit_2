@@ -33,6 +33,8 @@ mod collision;
 use collision::*;
 mod entity;
 use entity::*;
+mod sound;
+use sound::Sound;
 
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -49,12 +51,14 @@ const CLEAR_COL: Rgba = Rgba(0, 0, 0, 0);
 //const WALL_COL: Color = [200, 200, 200, 255];
 //const PLAYER_COL: Color = [255, 255, 0, 255];
 
-const OBSTACLE_SPACING: u16 = 100;
+const OBSTACLE_SPACING: u16 = 250;
 const OBSTACLE_WIDTH: u16 = 30;
-const OBSTACLE_MAX_HEIGHT: u16 = 50;
-const OBSTACLE_MIN_HEIGHT: u16 = 20;
-const OBSTACLE_SPEED: u16 = 2;
-const MIN_OBSTACLES: usize = WIDTH / (OBSTACLE_SPACING + OBSTACLE_WIDTH) as usize;
+const GAP_HEIGHT: usize = 175;
+const OBSTACLE_MIN_HEIGHT: u16 = 50;
+const OBSTACLE_MAX_HEIGHT: u16 = (HEIGHT - GAP_HEIGHT) as u16 - OBSTACLE_MIN_HEIGHT;
+const OBSTACLE_SPEED: u16 = 4;
+const MIN_OBSTACLES: usize = (WIDTH / (OBSTACLE_SPACING + OBSTACLE_WIDTH) as usize) * 2 + 1;
+
 
 #[derive(Debug, Copy, Clone)]
 enum Mode {
@@ -75,17 +79,19 @@ struct GameState {
 }
 
 struct GameData {
-    obstacle_tex: Rc<Texture>,
+    obstacle_tex_up: Rc<Texture>,
+    obstacle_tex_down: Rc<Texture>,
     title_tex: Rc<Texture>,
     player_tex: Rc<Texture>,
     wing_tex: Rc<Texture>,
     font: fontdue::Font,
+    sound: Sound,
     // should not use hashmap? because result of get() will be option?
 }
 
 impl Mode {
     // update consumes self and yields a new state (which might also just be self)
-    fn update(self, state: &mut GameState, data: &GameData, input: &WinitInputHelper) -> Self {
+    fn update(self, state: &mut GameState, data: &mut GameData, input: &WinitInputHelper) -> Self {
         match self {
             Mode::Title => {
 
@@ -206,10 +212,16 @@ fn main() {
 
     //load assets
     let player_tex = Rc::new(Texture::with_file(Path::new("./res/bird.png")));
-    let obstacle_tex = Rc::new(Texture::with_file(Path::new("./res/Warp_pipe.png")));
+    let obstacle_tex_up = Rc::new(Texture::with_file(Path::new("./res/pipe_up.png")));
+    let obstacle_tex_down = Rc::new(Texture::with_file(Path::new("./res/pipe_down.png")));
     let title_tex = Rc::new(Texture::with_file(Path::new("./res/TitleImage.png")));
     let wing_tex = Rc::new(Texture::with_file(Path::new("./res/wings.png")));
-    
+
+    let mut game_sound = Sound::new();
+    let _ = game_sound.init_manager();
+    game_sound.add_sound("jump".to_string(), "./res/jump.mp3".to_string());
+    game_sound.add_sound("pass".to_string(), "./res/pass.mp3".to_string());
+    game_sound.add_sound("die".to_string(), "./res/die.mp3".to_string());
 
     let mut mode = Mode::Title;
     let font = include_bytes!("./res/Exo2-Regular.ttf");
@@ -220,11 +232,13 @@ fn main() {
     let font = fontdue::Font::from_bytes(font, settings).unwrap();
 
     let mut data = GameData {
-        obstacle_tex: obstacle_tex,
+        obstacle_tex_up: obstacle_tex_up,
+        obstacle_tex_down: obstacle_tex_down,
         title_tex: title_tex,
         player_tex: player_tex,
         font: font,
         wing_tex: wing_tex,
+        sound: game_sound,
     };
 
     let mut state = new_game(&data);
@@ -277,7 +291,7 @@ fn main() {
         while available_time >= DT {
             // Eat up one frame worth of time
             available_time -= DT;
-            mode = mode.update(&mut state, &data, &input);
+            mode = mode.update(&mut state, &mut data, &input);
 
             // Increment the frame counter
             frame_count += 1;
@@ -293,9 +307,13 @@ fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
     screen.clear(Rgba(80, 80, 80, 255));
     //draw score
     
-    let score_rect = Rect{x: 0, y: 0, w: state.score_tex.width as u16, h: state.score_tex.height as u16};
-    let score_pos = Vec2i((WIDTH / 2) as i32, 10);
-    screen.bitblt(&state.score_tex, score_rect, score_pos);
+    let score_rect = Rect{x: (WIDTH / 2 - 70) as i32, y: 0, w: 160, h: 30};
+    screen.rect(score_rect, Rgba(0, 0, 0,255));
+    screen.rect_outline(score_rect, Rgba(0, 0, 255, 255));
+    let score_text_rect = Rect{x: 0, y: 0, w: state.score_tex.width as u16, h: state.score_tex.height as u16};
+    let score_text_pos = Vec2i((WIDTH / 2) as i32, 10);
+    
+    screen.bitblt(&state.score_tex, score_text_rect, score_text_pos);
     
     for obs in state.obstacles.iter_mut() {
         screen.draw_entity(obs);
@@ -307,7 +325,7 @@ fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
 }
 
 
-fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData) {
+fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameData) {
     let player = &mut state.player.body.hitbox;
     // Determine player velocity
     //let movespeed: i32 = 2;
@@ -322,8 +340,9 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     }
     let mut accel_down = state.accel_down;
     if input.key_pressed(VirtualKeyCode::Up) {
-        accel_down = -12;
-        //player.vy -= 40; //nethod 2
+        accel_down = -5;
+        data.sound.play_sound("jump".to_string());
+        //player.vy -= 40; //method 2
         state.player.wing.animations[0].current_frame = 0;
     } else {
         accel_down += 1;
@@ -335,19 +354,20 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     state.accel_down = accel_down;
     player.vy += accel_down;
     //clamp velocity since this restitution assumes objects aren't speeding too much
-    if player.vy > 7 {
-        player.vy = 7;
+    let min_velocity = -10;
+    let max_velocity = 10;
+    if player.vy > max_velocity {
+        player.vy = max_velocity;
     }
-    if player.vy < -10 {
-        player.vy = -10;
+    if player.vy < min_velocity {
+        player.vy = min_velocity;
     }
 
     if state.obstacles.len() < MIN_OBSTACLES {
-        //println!("check");
         if state.obstacles.len() == 0 || WIDTH as i32 - state.obstacles[state.obstacles.len() - 1].hitbox.rect.x - (OBSTACLE_WIDTH as i32) >= OBSTACLE_SPACING as i32 {
-            //println!("creating obstacle");
             let new_height = thread_rng().gen_range(OBSTACLE_MIN_HEIGHT, OBSTACLE_MAX_HEIGHT);
-            let new_hitbox = Mobile {
+            // pipe_up; bottom pipe
+            {let new_hitbox = Mobile {
                 rect: Rect {
                     x: WIDTH as i32 - OBSTACLE_WIDTH as i32,
                     y: HEIGHT as i32 - new_height as i32,
@@ -358,28 +378,57 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
                 vy: 0,
             };
             let mut new_sprite = Sprite::new(
-                &data.obstacle_tex,
+                &data.obstacle_tex_up,
                 Rect {
                     x: 0,
                     y: 0,
-                    w: 64,
-                    h: 64,
+                    w: 30,
+                    h: 400,
                 },
                 Vec2i(0, 0),
             );
+            
             let new_animation = Animation::new(OBSTACLE_WIDTH, new_height as u16, 0, 0, 1);
             new_sprite.animations.push(new_animation);
             let new_obstacle = Entity::new(new_hitbox, new_sprite, false);
-            state.obstacles.push(new_obstacle);
+            state.obstacles.push(new_obstacle);}
+            // pipe_down, top pipe
+            {
+            let new_height_2 = HEIGHT - new_height as usize - GAP_HEIGHT;
+            let new_hitbox = Mobile {
+                rect: Rect {
+                    x: WIDTH as i32 - OBSTACLE_WIDTH as i32,
+                    y: 0,
+                    w: OBSTACLE_WIDTH,
+                    h: new_height_2 as u16,
+                },
+                vx: OBSTACLE_SPEED as i32 * -1,
+                vy: 0,
+            };
+            let mut new_sprite = Sprite::new(
+                &data.obstacle_tex_down,
+                Rect {
+                    x: 0,
+                    y: 0,
+                    w: 30,
+                    h: 400,
+                },
+                Vec2i(0, 0),
+            );
+            let new_animation = Animation::new(OBSTACLE_WIDTH, new_height_2 as u16, 0, 400 - new_height_2 as i32, 1);
+            new_sprite.animations.push(new_animation);
+            let new_obstacle = Entity::new(new_hitbox, new_sprite, false);
+            state.obstacles.push(new_obstacle);}
         }
     }
 
     // check front pipe to see if it needs to be deleted
     if state.obstacles[0].hitbox.rect.x < 0 - OBSTACLE_WIDTH as i32 {
             let _ = state.obstacles.remove(0);
+            let _2 = state.obstacles.remove(0);
             state.score += 1;
+            data.sound.play_sound("pass".to_string());
             state.score_tex = create_score_tex(&data.font, state.score);
-            println!("score: {}",state.score);
     }
     player.update();
     
@@ -388,6 +437,7 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &GameData)
     for obs in state.obstacles.iter_mut() {
         if collision::rect_touching(obs.hitbox.rect, player.rect) {
             state.finished = true;
+            data.sound.play_sound("die".to_string());
             break;
         }
     }
@@ -409,10 +459,10 @@ fn new_game(data: &GameData) -> GameState {
         },
         Vec2i(0, 0),
     );
-    let mut player_animation = Animation::new(64, 64, 0, 0, 5);
+    let mut player_animation = Animation::new(32, 32, 0, 0, 5);
     player_animation.set_duration(Duration::new(3600, 0));
     player_sprite.animations.push(player_animation);
-    let player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 64, h: 64}, vx:0, vy: 0};
+    let player_hitbox = Mobile{rect: Rect{x:32, y:45, w: 25, h: 25}, vx:0, vy: 0};
     let body = Entity::new(player_hitbox, player_sprite, true);
     let mut wing = Sprite::new(
         &data.wing_tex,
@@ -424,7 +474,7 @@ fn new_game(data: &GameData) -> GameState {
         },
         Vec2i(0, 0),
     );
-    let mut wing_animation = Animation::new(44, 96, 0, 0, 9);
+    let mut wing_animation = Animation::new(22, 48, 0, 0, 9);
     wing_animation.set_duration(Duration::from_millis(30));
     wing_animation.do_loop = false;
     wing.animations.push(wing_animation);
@@ -438,7 +488,7 @@ fn new_game(data: &GameData) -> GameState {
         obstacles: obstacles,
         accel_down: 0,
         finished: false,
-        score: 10,
+        score: 0,
         score_tex: create_score_tex(&data.font, 0),
     };
     return state;

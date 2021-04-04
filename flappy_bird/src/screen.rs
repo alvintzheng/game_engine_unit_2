@@ -108,6 +108,13 @@ impl<'fb> Screen<'fb> {
             }
         }
     }
+
+    pub fn rect_outline(&mut self, r: Rect, col: Rgba) {
+        self.line(Vec2i(r.x, r.y), Vec2i(r.x + r.w as i32, r.y), col);
+        self.line(Vec2i(r.x, r.y + r.h as i32), Vec2i(r.x + r.w as i32, r.y + r.h as i32), col);
+        self.line(Vec2i(r.x, r.y), Vec2i(r.x, r.y + r.h as i32), col);
+        self.line(Vec2i(r.x + r.w as i32, r.y as i32), Vec2i(r.x + r.w as i32, r.y + r.h as i32), col);
+    }
     // Bitblt too begins with a translation
     pub fn bitblt(&mut self, src:&Texture, from: Rect, Vec2i(to_x, to_y): Vec2i) {
         let (tw,th) = src.size();
