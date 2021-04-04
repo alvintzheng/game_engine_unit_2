@@ -85,7 +85,7 @@ pub fn stack_horizontal(textures: Vec<Texture>) -> Texture {
     let mut column;
     let mut channel;
     let mut total_width = 0;
-    let mut min_height = textures[0].height;
+    let mut max_height = textures[0].height;
     //let mut current_col_start = 0;
     let sample = &textures[0];
     //let width = sample.width;
@@ -95,30 +95,39 @@ pub fn stack_horizontal(textures: Vec<Texture>) -> Texture {
     
     while texture < texture_count {
         total_width += textures[texture].width;
-        if min_height > textures[texture].height {
-            min_height = textures[texture].height;
+        if max_height < textures[texture].height {
+            max_height = textures[texture].height;
         }
         texture += 1;
     }
-    let height = min_height;
+    let height = max_height;
 
     while row < height {
         texture = 0;
-        //current_col_start = 0;
         while texture < texture_count {
             column = 0;
             let current_width = textures[texture].width;
-            // if (textures[texture].height != textures[0].height) {
-            //     println!("height mismatch");
-            // }
-            while column < current_width {
-                channel = 0;
-                while channel < depth {
-                    new_image.push(textures[texture].image[row * current_width * depth + column * depth + channel]);
-                    channel += 1;
+            if (textures[texture].height >= height - row) {
+                let row_offset = height - textures[texture].height;
+                while column < current_width {
+                    channel = 0;
+                    while channel < depth {
+                        new_image.push(textures[texture].image[(row - row_offset) * current_width * depth + column * depth + channel]);
+                        channel += 1;
+                    }
+                    column += 1;
                 }
-                column += 1;
+            } else {
+                while column < current_width {
+                    channel = 0;
+                    while channel < depth {
+                        new_image.push(0);
+                        channel += 1;
+                    }
+                    column += 1;
+                }
             }
+            
             //current_col_start += textures[texture].width;
             texture += 1;
         }
