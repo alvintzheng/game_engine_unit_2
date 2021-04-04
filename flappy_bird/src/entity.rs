@@ -39,7 +39,7 @@ impl<'fb> DrawBirdExt for Screen<'fb> {
     fn draw_bird(&mut self, b: &mut Bird) {
         self.draw_entity(&mut b.body);
         let Vec2i(x,y) = b.body.sprite.position;
-        b.wing.position = Vec2i(x, y - 25);
+        b.wing.position = Vec2i(x, y - 12);
         self.draw_sprite(&mut b.wing);
     }
 }
