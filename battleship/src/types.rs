@@ -6,7 +6,7 @@ pub struct Rect {
     pub h: u16,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug, Savefile)]
 pub struct Vec2i(pub i32, pub i32);
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]

@@ -8,6 +8,11 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 use rand::{thread_rng, Rng};
+extern crate savefile;
+use savefile::prelude::*;
+
+#[macro_use]
+extern crate savefile_derive;
 
 // Whoa what's this?
 // Mod without brackets looks for a nearby file.
@@ -30,6 +35,7 @@ mod tiles;
 use tiles::*;
 
 // Now this main module is just for the run-loop and rules processing.
+#[derive(Savefile)]
 struct GameState {
     title_image: Rc<Texture>,
     tilemaps: Vec<Tilemap>, //vector of tilemaps stored in GameState
@@ -106,6 +112,11 @@ impl Mode {
                                 game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 12) //missed opponent
                             }
 
+                            //save_game(&game);
+                            //let reloaded_game = load_game();
+                            //game = reloaded_game?????
+                            //assert_eq!(reloaded_player.name,"Steve".to_string());
+
                             //check if human won
                             //endgame doesnt work
                             if game.compsunk == 2 {
@@ -140,18 +151,24 @@ impl Mode {
 
                         //else
 
+                        ///////seems to not be getting the whole field
                         //random guess
-                        let xcompguess = thread_rng().gen_range(1, WIDTH) as i32; 
-                        let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT) as i32; 
+                        //let xcompguess = thread_rng().gen_range(1, WIDTH) as i32; 
+                        let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32; 
+                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT) as i32;
+                        let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;  
                         //hits human's ship
+                        ////////are none going into here?
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
+                            game.humansunk = game.humansunk + 1;
+                            println!("humansunk: {}", game.humansunk);
                             game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
                             Mode::Play(Turn::Human)
-                            ///////compsunk++
+
                         }
                         //misses human's ship
                         else if game.tilemaps[1].tile_id_num_at(Vec2i(xcompguess, ycompguess))!=4{
-                            game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
+                            game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //misses human's ship
                             Mode::Play(Turn::Human)
                         }
                         //already tried that square (tile 4)
@@ -229,6 +246,14 @@ impl Mode {
             }
         }
     }
+}
+
+fn save_game(game:&GameState) {
+    save_file("save.bin", 0, game).unwrap();
+}
+
+fn load_game() -> GameState {
+    load_file("save.bin", 0).unwrap()
 }
 
 fn main() {
@@ -441,6 +466,12 @@ fn main() {
         window.request_redraw();
         // When did the last frame end?
         since = Instant::now();
+
+
+        save_game(&state);
+        let reloaded_state = load_game();
+        //assert_eq!(reloaded_player.name,"Steve".to_string());
+
     });
 }
 
