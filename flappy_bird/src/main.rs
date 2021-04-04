@@ -131,7 +131,7 @@ impl Mode {
                     }
                     Mode::EndGame // should be endgame
                 }
-                else if input.key_pressed(VirtualKeyCode::P) {
+                else if input.key_pressed(VirtualKeyCode::Space) {
                     Mode::Play(!paused)
                 }
                 else if input.key_pressed(VirtualKeyCode::T) {
@@ -199,7 +199,7 @@ impl Mode {
                 let highscore_tex = create_text_tex(&data.font, "Highscore:".to_string() + &data.highscore.to_string());
                 // todo: change stack_horizontal to fill space rather than take shortest character
                 let from_rect = Rect{x: 0, y: 0, w: highscore_tex.width as u16, h: highscore_tex.height as u16};
-                let to_pos = Vec2i((WIDTH + highscore_tex.width) as i32 / 2, (HEIGHT + highscore_tex.height) as i32 / 2);
+                let to_pos = Vec2i((WIDTH - highscore_tex.width) as i32 / 2, (HEIGHT - highscore_tex.height) as i32 / 2);
                 screen.bitblt(&highscore_tex, from_rect, to_pos);
             }
             Mode::EndGame => { // Draw game result?
