@@ -56,6 +56,7 @@ enum Mode {
     Play(Turn),
     Options,
     ScoreBoard, 
+    Reset,
     EndGame,
 }
 
@@ -76,6 +77,10 @@ impl Mode {
                 }
                 else if input.key_pressed(VirtualKeyCode::Q) {
                     Mode::EndGame
+                } else if input.key_pressed(VirtualKeyCode::O) {
+                        Mode::Options
+                }else if input.key_pressed(VirtualKeyCode::R) {
+                        Mode::Reset
                 } else {
                     self
                 }
@@ -89,13 +94,22 @@ impl Mode {
                         // }
 
                         //check if computer won
-                        if game.humansunk == 2 { 
-                            Mode::EndGame;
-                            println!("You lost!")
-                        }
+                        //"path statement with no effect"
+                        /* if game.humansunk == 2 { 
+                            println!("You lost!");
+                            Mode::EndGame
+                        } */
 
-
-                        if input.mouse_pressed(0) {
+                        //these dont respond anymore
+                        if input.key_pressed(VirtualKeyCode::Q) {
+                            Mode::EndGame
+                        }else if input.key_pressed(VirtualKeyCode::O) {
+                            Mode::Options
+                        }else if input.key_pressed(VirtualKeyCode::S) {
+                            Mode::ScoreBoard
+                        }else if input.key_pressed(VirtualKeyCode::R) {
+                            Mode::Reset
+                        }else if input.mouse_pressed(0) {
                             
                             println!("human's turn");
 
@@ -107,34 +121,30 @@ impl Mode {
                             if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
                                 game.compsunk = game.compsunk + 1;
                                 println!("compsunk: {}", game.compsunk);
-                                game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8) //hit opponent
+                                game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8); //hit opponent
                             } else { //missed
-                                game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 12) //missed opponent
+                                game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 12); //missed opponent
                             }
 
-                            //save_game(&game);
-                            //let reloaded_game = load_game();
-                            //game = reloaded_game?????
-                            //assert_eq!(reloaded_player.name,"Steve".to_string());
+                            save_game(&game);
+                            let reloaded_game = load_game();
+                            *game = reloaded_game; 
+                            //assert_eq!(reloaded_game.name,"Steve".to_string());
 
                             //check if human won
                             //endgame doesnt work
-                            if game.compsunk == 2 {
+                            //"path statement with no effect"
+/*                             if game.compsunk == 2 {
+                                println!("You won!");
                                 Mode::EndGame;
-                                println!("You won!")
-                            }
+                            } */
 
-                            //these dont respond anymore
-                            if input.key_pressed(VirtualKeyCode::Q) {
-                                Mode::EndGame
-                            }else if input.key_pressed(VirtualKeyCode::O) {
-                                Mode::Options
-                            }else if input.key_pressed(VirtualKeyCode::S) {
-                                Mode::ScoreBoard
-                            }else {
-                               Mode::Play(Turn::Computer)
-                            }
+
+                            //this one works
+                            Mode::Play(Turn::Computer)
+                            
                         }
+                        //this one works
                         else{
                             Mode::Play(Turn::Human)
                         }
@@ -185,6 +195,8 @@ impl Mode {
                     Mode::EndGame
                 }else if input.key_pressed(VirtualKeyCode::S) {
                     Mode::ScoreBoard
+                }else if input.key_pressed(VirtualKeyCode::R) {
+                    Mode::Reset
                 }else if input.key_pressed(VirtualKeyCode::P) {
                     Mode::Play(Turn::Human) //need to track and save turn and what the board looks like
                 } else {
@@ -196,11 +208,53 @@ impl Mode {
                     Mode::EndGame
                 }else if input.key_pressed(VirtualKeyCode::O) {
                     Mode::Options
+                }else if input.key_pressed(VirtualKeyCode::R) {
+                    Mode::Reset
                 }else if input.key_pressed(VirtualKeyCode::P) {
                     Mode::Play(Turn::Human) //need to track and save turn and what the board looks like
                 } else {
                     self
                 }
+            }
+            Mode::Reset => {
+                let oppmap = Tilemap::new(
+                    Vec2i(0, 0), //location
+                    (12, 8),
+                    &game.tilemaps[0].tileset,
+                    vec![
+                        3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+                    ],
+                );
+                //your ships
+                let mymap = Tilemap::new(
+                    Vec2i(0, MAPDIM * 2), //location
+                    (12, 8),
+                    &game.tilemaps[0].tileset,
+                    vec![
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
+                        1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                    ],
+                );
+                
+                // reset to initial game state...
+                game.tilemaps = vec![oppmap, mymap];
+                game.compsunk = 0;
+                game.humansunk = 0;
+                save_game(&game);
+                Mode::Play(Turn::Human)
             }
             Mode::EndGame => {
                 if input.key_pressed(VirtualKeyCode::Q) {
@@ -241,6 +295,9 @@ impl Mode {
             Mode::ScoreBoard => {
                 screen.clear(Rgba(255, 80, 255, 255));
             }
+            Mode::Reset => {
+                screen.clear(Rgba(0, 0, 0, 255));
+            }
             Mode::EndGame => { // Draw game result?
                 screen.clear(Rgba(255, 255, 80, 255));
             }
@@ -254,7 +311,7 @@ fn save_game(game:&GameState) {
 
 fn load_game() -> GameState {
     load_file("save.bin", 0).unwrap()
-}
+} 
 
 fn main() {
     let event_loop = EventLoop::new();
@@ -369,7 +426,7 @@ fn main() {
     //tilemaps join together into a 3x2 map, i.e. 12x8 tile grid
     //opponent's ships
 
-    let oppmap = Tilemap::new(
+/*     let oppmap = Tilemap::new(
         Vec2i(0, 0), //location
         (12, 8),
         &boattileset,
@@ -399,17 +456,21 @@ fn main() {
             14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
         ],
-    );
+    ); */
 
     let mut mode = Mode::Title;
     
-    // initial game state...
+/*     // initial game state...
     let mut state = GameState {
         tilemaps: vec![oppmap, mymap], //vector of tilemaps
         title_image: title_image,
         compsunk: 0,
         humansunk: 0,
-    };
+    }; */
+
+    //load saved GameState
+    let mut state = load_game();
+    state.title_image = title_image;
 
     // How many frames have we simulated?
     let mut frame_count: usize = 0;
@@ -468,8 +529,8 @@ fn main() {
         since = Instant::now();
 
 
-        save_game(&state);
-        let reloaded_state = load_game();
+        //save_game(&state);
+        //let reloaded_state = load_game();
         //assert_eq!(reloaded_player.name,"Steve".to_string());
 
     });
