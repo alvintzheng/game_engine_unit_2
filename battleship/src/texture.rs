@@ -7,17 +7,16 @@ use savefile::prelude::*;
 
 #[derive(Savefile)]
 pub struct Texture {
-    image: Vec<u8>,
-    width: usize,
-    height: usize,
-    depth: usize,
+    pub image: Vec<u8>,
+    pub width: usize,
+    pub height: usize,
+    pub depth: usize,
 }
-
+#[allow(dead_code)]
 enum AlphaChannel {
     First,
     Last,
 }
-
 #[allow(dead_code)]
 impl Texture {
     pub fn with_file(path: &Path) -> Self {
@@ -31,7 +30,16 @@ impl Texture {
             width: width as usize,
             height: height as usize,
             depth: 4,
-            image,
+            image: image.to_vec(),
+        }
+    }
+    // for fonts
+    pub fn from_vec(vec: Vec<u8>, width: usize, height: usize, depth: usize) -> Self {
+        Self {
+            width: width,
+            height: height,
+            depth: depth,
+            image: vec,
         }
     }
     pub fn depth(&self) -> usize {
@@ -46,14 +54,11 @@ impl Texture {
     pub fn buffer(&self) -> &[u8] {
         &self.image
     }
-    // for fonts
-    pub fn from_vec(vec: Vec<u8>, width: usize, height: usize, depth: usize) -> Self {
-        Self {
-            width: width,
-            height: height,
-            depth: depth,
-            image: vec,
-        }
+    pub fn valid_frame(&self, frame: Rect) -> bool {
+        0 <= frame.x
+            && (frame.x + frame.w as i32) <= (self.width as i32)
+            && 0 <= frame.y
+            && (frame.y + frame.h as i32) <= (self.height as i32)
     }
     pub fn convert_to_rgba(&mut self) {
         if self.depth != 1 {
@@ -71,12 +76,6 @@ impl Texture {
         self.image = new_image;
         self.depth = 4;
     }
-    // pub fn valid_frame(&self, frame: Rect) -> bool {
-    //     0 <= frame.x
-    //         && (frame.x + frame.w as i32) <= (self.width as i32)
-    //         && 0 <= frame.y
-    //         && (frame.y + frame.h as i32) <= (self.height as i32)
-    // }
 }
 
 pub fn stack_horizontal(textures: Vec<Texture>) -> Texture {

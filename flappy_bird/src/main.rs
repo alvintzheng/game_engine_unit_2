@@ -217,6 +217,7 @@ impl Mode {
             }
             Mode::Options => {
                 screen.clear(Rgba(0, 0, 0, 255));
+                
                 let options_tex = create_text_tex(&data.font, "OPTIONS".to_string());
                 let from_rect_options = Rect{x: 0, y: 0, w: options_tex.width as u16, h: options_tex.height as u16};
                 let to_pos_options = Vec2i((WIDTH - options_tex.width) as i32 / 2, (HEIGHT - options_tex.height) as i32 / 6);

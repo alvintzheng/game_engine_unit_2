@@ -401,10 +401,35 @@ impl Mode {
             }
             Mode::Options => {
                 screen.clear(Rgba(80, 255, 255, 255));
+
+                let options_tex = create_text_tex(&data.font, "OPTIONS".to_string());
+                let from_rect_options = Rect{x: 0, y: 0, w: options_tex.width as u16, h: options_tex.height as u16};
+                let to_pos_options = Vec2i((WIDTH - options_tex.width) as i32 / 2, (HEIGHT - options_tex.height) as i32 / 6);
+                screen.bitblt(&options_tex, from_rect_options, to_pos_options);
+
+                let score_tex = create_text_tex(&data.font, "S>>>Highscore".to_string());
+                let from_rect_score = Rect{x: 0, y: 0, w: score_tex.width as u16, h: score_tex.height as u16};
+                let to_pos_score = Vec2i((WIDTH - score_tex.width) as i32 / 2, (HEIGHT - score_tex.height) as i32 / 3);
+                screen.bitblt(&score_tex, from_rect_score, to_pos_score);
+
+                let quit_tex = create_text_tex(&data.font, "Q>>>Quit".to_string());
+                let from_rect_quit = Rect{x: 0, y: 0, w: quit_tex.width as u16, h: quit_tex.height as u16};
+                let to_pos_quit = Vec2i((WIDTH - quit_tex.width) as i32 / 2, (HEIGHT - quit_tex.height) as i32 / 2);
+                screen.bitblt(&quit_tex, from_rect_quit, to_pos_quit);
+
+                let play_tex = create_text_tex(&data.font, "P>>>Play".to_string());
+                let from_rect_play = Rect{x: 0, y: 0, w: play_tex.width as u16, h: play_tex.height as u16};
+                let to_pos_play = Vec2i((WIDTH - play_tex.width) as i32 / 2, (HEIGHT - play_tex.height) as i32 / 3 * 2);
+                screen.bitblt(&play_tex, from_rect_play, to_pos_play);
             }
             Mode::ScoreBoard => {
                 screen.clear(Rgba(255, 80, 255, 255));
-                // Creates a dialog with a single "Quit" button
+
+                let highscore_tex = create_text_tex(&data.font, "Highscore:    ".to_string() + &data.highscore.to_string());
+                // todo: change stack_horizontal to fill space rather than take shortest character
+                let from_rect = Rect{x: 0, y: 0, w: highscore_tex.width as u16, h: highscore_tex.height as u16};
+                let to_pos = Vec2i((WIDTH - highscore_tex.width) as i32 / 2, (HEIGHT - highscore_tex.height) as i32 / 2);
+                screen.bitblt(&highscore_tex, from_rect, to_pos);
             }
             Mode::Reset => {
                 screen.clear(Rgba(0, 0, 0, 255));
@@ -414,10 +439,17 @@ impl Mode {
             }
             Mode::WonGame => { 
                 screen.clear(Rgba(0, 0, 0, 255));
-
+                let tex = create_text_tex(&data.font, "WINNER".to_string());
+                let from_rect = Rect{x: 0, y: 0, w: tex.width as u16, h: tex.height as u16};
+                let to_pos = Vec2i((WIDTH - tex.width) as i32 / 2, (HEIGHT - tex.height) as i32 / 3 * 2);
+                screen.bitblt(&tex, from_rect, to_pos);
             }
             Mode::LostGame => { 
                 screen.clear(Rgba(0, 0, 0, 255));
+                let tex = create_text_tex(&data.font, "GAME OVER".to_string());
+                let from_rect = Rect{x: 0, y: 0, w: tex.width as u16, h: tex.height as u16};
+                let to_pos = Vec2i((WIDTH - tex.width) as i32 / 2, (HEIGHT - tex.height) as i32 / 3 * 2);
+                screen.bitblt(&tex, from_rect, to_pos);
             }
         }
     }
