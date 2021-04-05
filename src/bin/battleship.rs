@@ -24,6 +24,7 @@ use unit2::tiles::*;
 use unit2::sound::*;
 use unit2::texture::stack_horizontal;
 
+
 // Now this main module is just for the run-loop and rules processing.
 #[derive(Savefile)]
 struct GameState {
@@ -153,18 +154,17 @@ impl Mode {
 
                         //else
 
-                        ///////seems to not be getting the whole field
                         //random guess
                         
-                        let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
-
                         //let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32;
                         //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;  
                         
                         ///////////// width of screen: 1-384
                         ///////////// height of screen: 128-384
+
+                        let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
                         let ycompguess = thread_rng().gen_range(SHEIGHT, HEIGHT) as i32;
- 
+
                         //let ycompguess = thread_rng().gen_range(257, 511) as i32;  
                         
                         //hits human's ship
@@ -497,6 +497,7 @@ fn main() {
     font = include_bytes!("../../res/Exo2-Regular.ttf");
     //Windows
     //font = include_bytes!("..\\..\\res\\Exo2-Regular.ttf") as &[u8];
+
     
     let settings = fontdue::FontSettings {
         scale: 12.0,
@@ -595,10 +596,6 @@ fn main() {
         ],
         texture: Rc::new(Texture::with_file(Path::new("./res/tileset.png"))), //bring in image as texture
     });
-
-    // 6 tilemaps, each 4x4 tiles
-    //tilemaps join together into a 3x2 map, i.e. 12x8 tile grid
-    
 
     let mut mode = Mode::Title;
     //load saved GameState
