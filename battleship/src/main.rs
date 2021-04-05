@@ -35,6 +35,9 @@ use types::*;
 mod tiles;
 use tiles::*;
 
+mod sound;
+use sound::*;
+
 // Now this main module is just for the run-loop and rules processing.
 #[derive(Savefile)]
 struct GameState {
@@ -43,6 +46,10 @@ struct GameState {
     //counts of how many ships sunk on both sides to track for end of game
     compsunk: usize,
     humansunk: usize,
+}
+
+struct GameData {
+    sound: Sound,
 }
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -69,7 +76,7 @@ enum Turn {
 
 impl Mode {
     // update consumes self and yields a new state (which might also just be self)
-    fn update(self, game: &mut GameState, input: &WinitInputHelper) -> Self {
+    fn update(self, game: &mut GameState, data: &mut GameData, input: &WinitInputHelper) -> Self {
         match self {
             Mode::Title => {
 
@@ -120,10 +127,12 @@ impl Mode {
                             //change tile at coordinates
                             //was opponent's ship hidden there?
                             if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
+                                data.sound.play_sound("hit".to_string());
                                 game.compsunk = game.compsunk + 1;
                                 println!("compsunk: {}", game.compsunk);
                                 game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8); //hit opponent
                             } else { //missed
+                                data.sound.play_sound("splash".to_string());
                                 game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 12); //missed opponent
                             }
 
@@ -135,7 +144,7 @@ impl Mode {
                             //check if human won
                             //endgame doesnt work
                             //"path statement with no effect"
-/*                             if game.compsunk == 2 {
+                            /*  if game.compsunk == 2 {
                                 println!("You won!");
                                 Mode::EndGame;
                             } */
@@ -164,13 +173,16 @@ impl Mode {
 
                         ///////seems to not be getting the whole field
                         //random guess
-                        //let xcompguess = thread_rng().gen_range(1, WIDTH) as i32; 
+                        //let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
+                        // let sleep_duration = time::Duration::from_millis(2000); 
+                        // thread::sleep(sleep_duration);
                         let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32; 
                         //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT) as i32;
                         let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;  
                         //hits human's ship
                         ////////are none going into here?
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
+                            data.sound.play_sound("hit".to_string());
                             game.humansunk = game.humansunk + 1;
                             println!("humansunk: {}", game.humansunk);
                             game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
@@ -179,6 +191,7 @@ impl Mode {
                         }
                         //misses human's ship
                         else if game.tilemaps[1].tile_id_num_at(Vec2i(xcompguess, ycompguess))!=4{
+                            data.sound.play_sound("splash".to_string());
                             game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //misses human's ship
                             Mode::Play(Turn::Human)
                         }
@@ -269,7 +282,7 @@ impl Mode {
             }
         }
     }
-    fn display(&self, game: &GameState, screen: &mut Screen) {
+    fn display(&self, game: &GameState, data: &mut GameData, screen: &mut Screen) {
         match self {
             Mode::Title => {
                 //draw a (static?) title
@@ -337,7 +350,11 @@ fn main() {
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH as u32, HEIGHT as u32, surface_texture).unwrap()
     };
-
+    let mut game_sound = Sound::new();
+    let _ = game_sound.init_manager();
+    game_sound.add_sound("hit".to_string(), "./res/hit.mp3".to_string());
+    game_sound.add_sound("splash".to_string(), "./res/splash.mp3".to_string());
+    let mut data = GameData {sound: game_sound};
     let title_image = Rc::new(Texture::with_file(Path::new("res/logo.png")));
 
     //create Tileset from tileset.png image
@@ -432,48 +449,49 @@ fn main() {
     //tilemaps join together into a 3x2 map, i.e. 12x8 tile grid
     //opponent's ships
 
-/*     let oppmap = Tilemap::new(
-        Vec2i(0, 0), //location
-        (12, 8),
-        &boattileset,
-        vec![
-            3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-            0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, //
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, //
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-            3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
-        ],
-    );
-    //your ships
-    let mymap = Tilemap::new(
-        Vec2i(0, MAPDIM * 2), //location
-        (12, 8),
-        &boattileset,
-        vec![
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
-            1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
-            1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, //x mark
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-            10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-            14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-        ],
-    ); */
+    //  let oppmap = Tilemap::new(
+    //     Vec2i(0, 0), //location
+    //     (12, 8),
+    //     &boattileset,
+    //     vec![
+    //         3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+    //         0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, //
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, //
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+    //         3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+    //     ],
+    // );
+    // //your ships
+    // let mymap = Tilemap::new(
+    //     Vec2i(0, MAPDIM * 2), //location
+    //     (12, 8),
+    //     &boattileset,
+    //     vec![
+    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
+    //         1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
+    //         1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, //x mark
+    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //         10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //         14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //     ],
+    // ); 
+
+    
+    
+    //  // initial game state...
+    // let mut state = GameState {
+    //     tilemaps: vec![oppmap, mymap], //vector of tilemaps
+    //     title_image: title_image,
+    //     compsunk: 0,
+    //     humansunk: 0,
+    // }; 
 
     let mut mode = Mode::Title;
-    
-/*     // initial game state...
-    let mut state = GameState {
-        tilemaps: vec![oppmap, mymap], //vector of tilemaps
-        title_image: title_image,
-        compsunk: 0,
-        humansunk: 0,
-    }; */
-
     //load saved GameState
     let mut state = load_game();
     state.title_image = title_image;
@@ -496,7 +514,7 @@ fn main() {
 
             // change to draw game using state and mode, i.e. mode.draw_game(state)
             //draw_game(&state, &mut screen);
-            mode.display(&state, &mut screen);
+            mode.display(&state, &mut data, &mut screen);
 
             // Flip buffers
             if pixels.render().is_err() {
@@ -527,7 +545,7 @@ fn main() {
 
             // change to use mode
             //update_game(&mut state, &input, frame_count);
-            mode = mode.update(&mut state, &input);
+            mode = mode.update(&mut state, &mut data, &input);
             // Increment the frame counter
             frame_count += 1;
         }
