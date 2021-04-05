@@ -6,7 +6,7 @@ extern crate savefile;
 use savefile::prelude::*;
 
 pub const TILE_SZ: usize = 16;
-//pub const TILE_SZ: usize = 32;
+
 /// A graphical tile, we'll implement Copy since it's tiny
 #[derive(Clone, Copy, Savefile)]
 pub struct Tile {
@@ -103,10 +103,10 @@ impl Tilemap {
     pub fn tile_id_at(&self, Vec2i(x, y): Vec2i) -> TileID {
 
             // Translate into map coordinates
-            //let x = (x - self.position.0) / TILE_SZ as i32;
-            //let y = (y - self.position.1) / TILE_SZ as i32;
-            let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
-            let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
+            let x = (x - self.position.0) / TILE_SZ as i32;
+            let y = (y - self.position.1) / TILE_SZ as i32;
+            ///////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
+            ///////let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
             assert!(
                 x >= 0 && x < self.dims.0 as i32,
                 "Tile X coordinate {} out of bounds {}",
@@ -119,18 +119,18 @@ impl Tilemap {
                 y,
                 self.dims.1
             );
-            //self.map[y as usize * self.dims.0 + x as usize]
-            self.map[y as usize + x as usize]
+            self.map[y as usize * self.dims.0 + x as usize]
+            //self.map[y as usize + x as usize]
 
     }
     //input: window coordinates
     //output: TileID as usize
     pub fn tile_id_num_at(&self, Vec2i(x, y): Vec2i) -> usize {
         // Translate into map coordinates
-        //t x = (x - self.position.0) / TILE_SZ as i32;
-        //let y = (y - self.position.1) / TILE_SZ as i32;
-        let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
-        let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
+        let x = (x - self.position.0) / TILE_SZ as i32;
+        let y = (y - self.position.1) / TILE_SZ as i32;
+        ////////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
+        ////////let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
         assert!(
             x >= 0 && x < self.dims.0 as i32,
             "Tile X coordinate {} out of bounds {}",
@@ -159,9 +159,10 @@ impl Tilemap {
     pub fn set_tile_at(&mut self, Vec2i(x, y): Vec2i, id: usize) {
         //pub fn set_tile_at(mut self, Vec2i(x, y): Vec2i, id: usize) {
         // Translate into map coordinates
-
-        let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
-        let y = (y - self.position.1) / 32 as i32;
+        let x = (x - self.position.0) / TILE_SZ as i32; //32 coordinates per tile
+        let y = (y - self.position.1) / TILE_SZ as i32;
+        ////////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
+        ////////let y = (y - self.position.1) / 32 as i32;
         println!("x: {}, y: {})", x, y);
 
         assert!(
@@ -176,7 +177,8 @@ impl Tilemap {
             y,
             self.dims.1
         );
-        self.map[y as usize * self.dims.0 + x as usize] = TileID(id);
+        self.map[y as usize * self.dims.0 + x as usize] = TileID(id); //self.dims.0 = 12
+        //self.map[y as usize + x as usize] = TileID(id); //self.dims.0 = 12
     }
 
     //from Slack comments

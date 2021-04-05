@@ -41,9 +41,14 @@ struct GameData {
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
 const MAPDIM: i32 = 64;
-const WIDTH: usize = MAPDIM as usize * 3;
-const HEIGHT: usize = MAPDIM as usize * 4;
+//const WIDTH: usize = MAPDIM as usize * 3; //192
+//const HEIGHT: usize = MAPDIM as usize * 4; //256
+const WIDTH: usize = 16*12; //192
+const HEIGHT: usize = 16*16; //256
+const SHEIGHT: usize = 16*8; //128
 const DEPTH: usize = 4;
+
+//8 squares H by 12 squares W
 
 #[derive(Debug, Copy, Clone)]
 enum Mode {
@@ -150,14 +155,19 @@ impl Mode {
 
                         ///////seems to not be getting the whole field
                         //random guess
-                        //let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
-                        // let sleep_duration = time::Duration::from_millis(2000); 
-                        // thread::sleep(sleep_duration);
-                        let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32; 
-                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT) as i32;
-                        let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;  
+                        
+                        let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
+
+                        //let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32;
+                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;  
+                        
+                        ///////////// width of screen: 1-384
+                        ///////////// height of screen: 128-384
+                        let ycompguess = thread_rng().gen_range(SHEIGHT, HEIGHT) as i32;
+ 
+                        //let ycompguess = thread_rng().gen_range(257, 511) as i32;  
+                        
                         //hits human's ship
-                        ////////are none going into here?
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
                             data.sound.play_sound("hit".to_string());
                             game.humansunk = game.humansunk + 1;
