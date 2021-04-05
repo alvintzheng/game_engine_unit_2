@@ -8,9 +8,10 @@ use savefile::prelude::*;
 pub const TILE_SZ: usize = 16;
 
 //Windows:
-//pub const SZ: usize = 16;
+pub const SZ: usize = 16;
+
 //Mac:
-pub const SZ: usize = 32;
+//pub const SZ: usize = 32;
 
 /// A graphical tile, we'll implement Copy since it's tiny
 #[derive(Clone, Copy, Savefile)]
@@ -110,21 +111,23 @@ impl Tilemap {
             // Translate into map coordinates
             let x = (x - self.position.0) / SZ as i32;
             let y = (y - self.position.1) / SZ as i32;
-            ///////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
-            ///////let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
+
             assert!(
                 x >= 0 && x < self.dims.0 as i32,
-                "Tile X coordinate {} out of bounds {}",
+                "tile_id_at Tile X coordinate {} out of bounds {}", //goes to tile_at
                 x,
                 self.dims.0
             );
             assert!(
                 y >= 0 && y < self.dims.1 as i32,
-                "Tile Y coordinate {} out of bounds {}",
+                "tile_id_at Tile Y coordinate {} out of bounds {}", //goes to tile_at
                 y,
                 self.dims.1
-            );
+            ); 
+            //Windows?
             self.map[y as usize * self.dims.0 + x as usize]
+
+            //Mac:
             //self.map[y as usize + x as usize]
 
     }
@@ -134,17 +137,15 @@ impl Tilemap {
         // Translate into map coordinates
         let x = (x - self.position.0) / SZ as i32;
         let y = (y - self.position.1) / SZ as i32;
-        ////////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
-        ////////let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
         assert!(
             x >= 0 && x < self.dims.0 as i32,
-            "Tile X coordinate {} out of bounds {}",
+            "tile_id_num_at Tile X coordinate {} out of bounds {}",
             x,
             self.dims.0
         );
         assert!(
             y >= 0 && y < self.dims.1 as i32,
-            "Tile Y coordinate {} out of bounds {}",
+            "tile_id_num_at Tile Y coordinate {} out of bounds {}",
             y,
             self.dims.1
         );
@@ -166,23 +167,24 @@ impl Tilemap {
         // Translate into map coordinates
         let x = (x - self.position.0) / SZ as i32; //32 coordinates per tile
         let y = (y - self.position.1) / SZ as i32;
-        ////////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
-        ////////let y = (y - self.position.1) / 32 as i32;
         println!("x: {}, y: {})", x, y);
 
         assert!(
             x >= 0 && x < self.dims.0 as i32,
-            "Tile X coordinate {} out of bounds {}",
+            "set_tile_at Tile X coordinate {} out of bounds {}",
             x,
             self.dims.0
         );
         assert!(
             y >= 0 && y < self.dims.1 as i32,
-            "Tile Y coordinate {} out of bounds {}",
+            "set_tile_at Tile Y coordinate {} out of bounds {}",
             y,
             self.dims.1
         );
+        //Mac 
+        //& Windows?
         self.map[y as usize * self.dims.0 + x as usize] = TileID(id); //self.dims.0 = 12
+
         //self.map[y as usize + x as usize] = TileID(id); //self.dims.0 = 12
     }
 

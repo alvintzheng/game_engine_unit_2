@@ -25,7 +25,7 @@ use unit2::sound::*;
 use unit2::texture::stack_horizontal;
 
 
-// Now this main module is just for the run-loop and rules processing.
+//GameState - saved and loaded from file
 #[derive(Savefile)]
 struct GameState {
     title_image: Rc<Texture>,
@@ -147,6 +147,11 @@ impl Mode {
                         ///////////// width of screen: 1-384
                         ///////////// height of screen: 128-384
 
+                        //Mac:
+                        //let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32;
+                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;
+
+                        //Windows:
                         let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
                         let ycompguess = thread_rng().gen_range(SHEIGHT, HEIGHT) as i32;
   
@@ -202,60 +207,63 @@ impl Mode {
                 }
             }
             Mode::Reset => {
+                //computer's ships
                 let oppmap = Tilemap::new(
                     Vec2i(0, 0), //location
                     (12, 8),
                     &game.tilemaps[0].tileset,
                     vec![
-                        3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+                        0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden double ship
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, // hidden pirate ship
+                        0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, // hidden pirate ship
+                        0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden tall ship
+                        0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden tall ship
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, // hidden single ship
                     ],
                 );
                 //your ships
                 let mymap = Tilemap::new(
-                    Vec2i(0, MAPDIM * 2), //location
+                    Vec2i(0, MAPDIM * 2), //location 0,128
                     (12, 8),
                     &game.tilemaps[0].tileset,
                     vec![
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
                         1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 9, 1, 1, 1, // tall ship
+                        1, 1, 1, 1, 1, 1, 1, 1, 13, 1, 1, 1, // tall ship
+                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // pirate ship
+                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // pirate ship
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
                     ],
                 );
                 
-                // reset to initial game state...
+                // reset to initial game state
                 game.tilemaps = vec![oppmap, mymap];
                 game.compsunk = 0;
                 game.humansunk = 0;
                 save_game(&game);
+
                 Mode::Play(Turn::Human)
             }
             Mode::WonGame => {
                 //resetting
+                //computer's ships
                 let oppmap = Tilemap::new(
                     Vec2i(0, 0), //location
                     (12, 8),
                     &game.tilemaps[0].tileset,
                     vec![
-                        3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+                        0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden double ship
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, // hidden pirate ship
+                        0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, // hidden pirate ship
+                        0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden tall ship
+                        0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden tall ship
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, // hidden single ship
                     ],
                 );
                 //your ships
@@ -267,14 +275,15 @@ impl Mode {
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
                         1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 9, 1, 1, 1, // tall ship
+                        1, 1, 1, 1, 1, 1, 1, 1, 13, 1, 1, 1, // tall ship
+                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // pirate ship
+                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // pirate ship
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
                     ],
                 );
-                // reset to initial game state...
+                
+                // reset to initial game state
                 game.tilemaps = vec![oppmap, mymap];
                 game.compsunk = 0;
                 game.humansunk = 0;
@@ -293,19 +302,20 @@ impl Mode {
             }
             Mode::LostGame => {
                 //reseting game
+                //computer's ships
                 let oppmap = Tilemap::new(
                     Vec2i(0, 0), //location
                     (12, 8),
                     &game.tilemaps[0].tileset,
                     vec![
-                        3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+                        0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden double ship
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, // hidden pirate ship
+                        0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, // hidden pirate ship
+                        0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden tall ship
+                        0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // hidden tall ship
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, // hidden single ship
                     ],
                 );
                 //your ships
@@ -317,14 +327,15 @@ impl Mode {
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
                         1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 9, 1, 1, 1, // tall ship
+                        1, 1, 1, 1, 1, 1, 1, 1, 13, 1, 1, 1, // tall ship
+                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // pirate ship
+                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // pirate ship
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
                     ],
                 );
-                // reset to initial game state...
+                
+                // reset to initial game state
                 game.tilemaps = vec![oppmap, mymap];
                 game.compsunk = 0;
                 game.humansunk = 0;
@@ -646,10 +657,6 @@ fn main() {
         since = Instant::now();
 
 
-        //save_game(&state);
-        //let reloaded_state = load_game();
-        //assert_eq!(reloaded_player.name,"Steve".to_string());
-
     });
 }
 
@@ -669,42 +676,3 @@ fn create_text_tex(font: &fontdue::Font, text: String) -> Rc<Texture> {
     return Rc::new(stack_horizontal(char_textures));
 }
 
-/*
-fn draw_game(state: &GameState, screen: &mut Screen) {
-    // Call screen's drawing methods to render the game state
-    screen.clear(Rgba(80, 80, 80, 255));
-
-    //draw each tilemap in vector to screen
-    state.tilemaps[0].draw(screen);
-    state.tilemaps[1].draw(screen);
-}
-
-fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
-    // Player control goes here
-
-    //0 == Left
-    if input.mouse_pressed(0) {
-       ////need set tile function to call here
-
-       //prints twice?
-       println!("mouse coordinates: ({}, {})", input.mouse().unwrap().0, input.mouse().unwrap().1);
-
-/*        //tester writing over a whole tilemap
-        state.tilemaps[1] = Tilemap::new(
-            Vec2i(64, 0),
-            (4, 4),
-            &state.tilemaps[0].tileset,
-            vec![0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0], //view of opponent
-        ); */
-
-        //coordinates are off
-        state.tilemaps[0].set_tile_at(Vec2i(input.mouse().unwrap().0 as i32, input.mouse().unwrap().1 as i32), 12);
-
-    }
-
-    if input.key_held(VirtualKeyCode::Right) {}
-    if input.key_held(VirtualKeyCode::Left) {}
-    if input.key_held(VirtualKeyCode::Up) {}
-    if input.key_held(VirtualKeyCode::Down) {}
-}
- */
