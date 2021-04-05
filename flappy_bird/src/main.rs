@@ -292,11 +292,11 @@ fn main() {
     let mut mode = Mode::Title;
     let mut font:&[u8];// = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
 
-    if cfg!(target_os = "windows") {
-        font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
-      } else {
+    //if cfg!(target_os = "windows") {
+        //font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
+    //  } else {
         font = include_bytes!("../res/Exo2-Regular.ttf") as &[u8];
-      }
+    //  }
     
     let settings = fontdue::FontSettings {
         scale: 12.0,
@@ -421,8 +421,8 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
     }
     let mut accel_down = state.accel_down;
     if input.key_pressed(VirtualKeyCode::Up) {
-        //accel_down = -5;
-        accel_down = -2;
+        accel_down = -4;
+        //accel_down = -2;
         data.sound.play_sound("jump".to_string());
         //player.vy -= 40; //method 2
         state.player.wing.animations[0].current_frame = 0;
@@ -436,8 +436,9 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
     state.accel_down = accel_down;
     player.vy += accel_down;
     //clamp velocity since this restitution assumes objects aren't speeding too much
-    let min_velocity = -10;
-    let max_velocity = 10;
+
+    let min_velocity = -5;
+    let max_velocity = 5;
     if player.vy > max_velocity {
         player.vy = max_velocity;
     }

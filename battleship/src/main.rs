@@ -66,6 +66,8 @@ enum Mode {
     ScoreBoard, 
     Reset,
     EndGame,
+    WonGame,
+    LostGame,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -82,9 +84,9 @@ impl Mode {
 
                 if input.key_pressed(VirtualKeyCode::P) {
                     Mode::Play(Turn::Human)
-                }
-                else if input.key_pressed(VirtualKeyCode::Q) {
-                    Mode::EndGame
+                } else if input.key_pressed(VirtualKeyCode::Q) {
+                    //Mode::EndGame
+                    panic!();
                 } else if input.key_pressed(VirtualKeyCode::O) {
                         Mode::Options
                 }else if input.key_pressed(VirtualKeyCode::R) {
@@ -96,20 +98,18 @@ impl Mode {
             Mode::Play(pm) => {
                 match pm {
                     Turn::Human => {
-                        //move update_game to here
-                        // if let Some(pm) = pm.update(game, input) {
-                        //     Mode::Play(pm);
-                        // }
 
                         //check if computer won
-                        //"path statement with no effect"
-                        /* if game.humansunk == 2 { 
+                        if game.humansunk == 2 { 
                             println!("You lost!");
                             Mode::EndGame
-                        } */
-
-                        //these dont respond anymore
-                        if input.key_pressed(VirtualKeyCode::Q) {
+                        }
+                        //check if human won
+                        else if game.compsunk == 2 {
+                            println!("You won!");
+                            Mode::EndGame
+                        }
+                        else if input.key_pressed(VirtualKeyCode::Q) {
                             Mode::EndGame
                         }else if input.key_pressed(VirtualKeyCode::O) {
                             Mode::Options
@@ -141,13 +141,7 @@ impl Mode {
                             *game = reloaded_game; 
                             //assert_eq!(reloaded_game.name,"Steve".to_string());
 
-                            //check if human won
-                            //endgame doesnt work
-                            //"path statement with no effect"
-                            /*  if game.compsunk == 2 {
-                                println!("You won!");
-                                Mode::EndGame;
-                            } */
+
 
 
                             //this one works
@@ -212,7 +206,7 @@ impl Mode {
                 }else if input.key_pressed(VirtualKeyCode::R) {
                     Mode::Reset
                 }else if input.key_pressed(VirtualKeyCode::P) {
-                    Mode::Play(Turn::Human) //need to track and save turn and what the board looks like
+                    Mode::Play(Turn::Human)
                 } else {
                     self
                 }
@@ -270,6 +264,107 @@ impl Mode {
                 save_game(&game);
                 Mode::Play(Turn::Human)
             }
+            Mode::WonGame => {
+                /////reset isnt happening
+                //resetting
+                let oppmap = Tilemap::new(
+                    Vec2i(0, 0), //location
+                    (12, 8),
+                    &game.tilemaps[0].tileset,
+                    vec![
+                        3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+                    ],
+                );
+                //your ships
+                let mymap = Tilemap::new(
+                    Vec2i(0, MAPDIM * 2), //location
+                    (12, 8),
+                    &game.tilemaps[0].tileset,
+                    vec![
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
+                        1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                    ],
+                );
+                // reset to initial game state...
+                game.tilemaps = vec![oppmap, mymap];
+                game.compsunk = 0;
+                game.humansunk = 0;
+                save_game(&game);
+                
+                if input.key_pressed(VirtualKeyCode::Q) {
+                    panic!();
+                } else if input.key_pressed(VirtualKeyCode::P) {
+                    Mode::Play(Turn::Human)
+                } else if input.key_pressed(VirtualKeyCode::T) {
+                    Mode::Title
+                }
+                else {
+                    self
+                }
+            }
+            Mode::LostGame => {
+                //reseting game
+                let oppmap = Tilemap::new(
+                    Vec2i(0, 0), //location
+                    (12, 8),
+                    &game.tilemaps[0].tileset,
+                    vec![
+                        3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+                        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+                    ],
+                );
+                //your ships
+                let mymap = Tilemap::new(
+                    Vec2i(0, MAPDIM * 2), //location
+                    (12, 8),
+                    &game.tilemaps[0].tileset,
+                    vec![
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
+                        1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+                    ],
+                );
+                // reset to initial game state...
+                game.tilemaps = vec![oppmap, mymap];
+                game.compsunk = 0;
+                game.humansunk = 0;
+                save_game(&game);
+
+                if input.key_pressed(VirtualKeyCode::Q) {
+                    panic!();
+                } else if input.key_pressed(VirtualKeyCode::P) {
+                    Mode::Play(Turn::Human)
+                } else if input.key_pressed(VirtualKeyCode::T) {
+                    Mode::Title
+                }
+                else {
+                    self
+                }
+            }
             Mode::EndGame => {
                 if input.key_pressed(VirtualKeyCode::Q) {
                     panic!();
@@ -309,14 +404,19 @@ impl Mode {
             Mode::ScoreBoard => {
                 screen.clear(Rgba(255, 80, 255, 255));
                 // Creates a dialog with a single "Quit" button
-                
-
             }
             Mode::Reset => {
                 screen.clear(Rgba(0, 0, 0, 255));
             }
             Mode::EndGame => { // Draw game result?
                 screen.clear(Rgba(255, 255, 80, 255));
+            }
+            Mode::WonGame => { 
+                screen.clear(Rgba(0, 0, 0, 255));
+
+            }
+            Mode::LostGame => { 
+                screen.clear(Rgba(0, 0, 0, 255));
             }
         }
     }
