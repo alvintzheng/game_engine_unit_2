@@ -1,10 +1,3 @@
-/**** NOTES ****
-    - 
-*/
-/**** TO DO ****
-    - game over page, set up gamestate/menu structure
-    - read/write to external file for high score (time survived=score?)
-*/
 
 use pixels::{Pixels, SurfaceTexture};
 use std::path::Path;
@@ -19,24 +12,7 @@ use std::time::{Duration};
 
 use rand::{thread_rng, Rng};
 
-/* mod screen;
-use screen::Screen;
-mod texture;
-use texture::Texture;
-mod animation;
-use animation::Animation;
-mod sprite;
-use sprite::*;
-mod types;
-use types::*;
-mod collision;
-use collision::*;
-mod entity;
-use entity::*;
-mod sound;
-use sound::Sound;
-mod tiles;
-use tiles::*; */
+
 
 //use unit2::lib::*;
 use unit2::screen::Screen;
@@ -51,6 +27,11 @@ use unit2::entity::*;
 use unit2::sound::Sound;
 use unit2::tiles::*;
 use unit2::tiles::TILE_SZ;
+extern crate savefile;
+use savefile::prelude::*;
+
+#[macro_use]
+extern crate savefile_derive;
 
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -90,6 +71,7 @@ enum Mode {
     EndGame,
 }
 
+
 struct GameState {
     player: Bird,
     obstacles: Vec<Entity>,
@@ -101,6 +83,7 @@ struct GameState {
     walls: Vec<Wall>,
 }
 
+//#[derive(Savefile)]
 struct GameData {
     obstacle_tex_up: Rc<Texture>,
     obstacle_tex_down: Rc<Texture>,
@@ -145,6 +128,11 @@ impl Mode {
                     if data.highscore < state.score {
                         data.highscore = state.score;
                     }
+                    ///////////////////////////////////////
+                    save_data(data.highscore);
+                    let reloaded_data = load_data();
+                    data.highscore = reloaded_data; 
+
                     Mode::EndGame // should be endgame
                 }
                 else if input.key_pressed(VirtualKeyCode::Space) {
@@ -152,6 +140,15 @@ impl Mode {
                 }
                 else if input.key_pressed(VirtualKeyCode::T) {
                     Mode::Title
+                }
+                else if input.key_pressed(VirtualKeyCode::S) {
+                    Mode::ScoreBoard
+                }
+                else if input.key_pressed(VirtualKeyCode::Q) {
+                    panic!();
+                }
+                else if input.key_pressed(VirtualKeyCode::O) {
+                    Mode::Options
                 }
                 else {
                     self
@@ -270,7 +267,13 @@ impl Mode {
     }
 }
 
+fn save_data(score: usize) {
+    save_file("save_flappy_bird.bin", 0, &score).unwrap();
+}
 
+fn load_data() -> usize {
+    load_file("save_flappy_bird.bin", 0).unwrap()
+} 
 
 fn main() {
     let event_loop = EventLoop::new();
@@ -323,6 +326,9 @@ fn main() {
     };
     let font = fontdue::Font::from_bytes(font, settings).unwrap();
 
+    let reloaded_data = load_data();
+    //data.highscore = reloaded_data; 
+
     let mut data = GameData {
         obstacle_tex_up: obstacle_tex_up,
         obstacle_tex_down: obstacle_tex_down,
@@ -332,7 +338,7 @@ fn main() {
         wing_tex: wing_tex,
         sound: game_sound,
         sky_tex: sky_tex,
-        highscore: 0,
+        highscore: reloaded_data,
     };
 
     let mut state = new_game(&data);

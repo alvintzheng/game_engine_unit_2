@@ -15,28 +15,6 @@ use savefile::prelude::*;
 #[macro_use]
 extern crate savefile_derive;
 
-/* // Whoa what's this?
-// Mod without brackets looks for a nearby file.
-mod screen;
-// Then we can use as usual.  The screen module will have drawing utilities.
-use screen::Screen;
-// Collision will have our collision bodies and contact types
-mod collision;
-// Lazy glob imports
-use collision::*;
-// Texture has our image loading and processing stuff
-mod texture;
-use texture::Texture;
-
-// And we'll put our general purpose types like color and geometry here:
-mod types;
-use types::*;
-
-mod tiles;
-use tiles::*;
-
-mod sound;
-use sound::*; */
 
 use unit2::screen::Screen;
 use unit2::collision::*;
@@ -469,11 +447,11 @@ impl Mode {
 }
 
 fn save_game(game:&GameState) {
-    save_file("save.bin", 0, game).unwrap();
+    save_file("save_battleship.bin", 0, game).unwrap();
 }
 
 fn load_game() -> GameState {
-    load_file("save.bin", 0).unwrap()
+    load_file("save_battleship.bin", 0).unwrap()
 } 
 
 fn main() {
