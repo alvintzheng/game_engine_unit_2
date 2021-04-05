@@ -145,6 +145,16 @@ impl Mode {
                 if input.key_pressed(VirtualKeyCode::T) {
                     Mode::Title
                 }
+                else if input.key_pressed(VirtualKeyCode::P) {
+                    *state = new_game(data);
+                    Mode::Play(false)
+                }
+                else if input.key_pressed(VirtualKeyCode::S) {
+                    Mode::ScoreBoard
+                }
+                else if input.key_pressed(VirtualKeyCode::Q) {
+                    panic!();
+                }
                 else {
                     self
                 }
@@ -152,6 +162,16 @@ impl Mode {
             Mode::ScoreBoard => {
                 if input.key_pressed(VirtualKeyCode::T) {
                     Mode::Title
+                }
+                else if input.key_pressed(VirtualKeyCode::P) {
+                    *state = new_game(data);
+                    Mode::Play(false)
+                }
+                else if input.key_pressed(VirtualKeyCode::O) {
+                    Mode::Options
+                } 
+                else if input.key_pressed(VirtualKeyCode::Q) {
+                    panic!();
                 }
                 else {
                     self
@@ -175,7 +195,7 @@ impl Mode {
         match self {
             Mode::Title => {
                 //draw a (static?) title
-                screen.clear(Rgba(80, 80, 80, 255));
+                screen.clear(Rgba(0, 0, 0, 255));
                 let display_rect = Rect {
                     x: 0,
                     y: 0,
@@ -183,6 +203,10 @@ impl Mode {
                     h: 51,
                 };
                 screen.bitblt(&data.title_tex, display_rect, Vec2i(275, 224));
+                let play_tex = create_text_tex(&data.font, "P>>>Play".to_string());
+                let from_rect_play = Rect{x: 0, y: 0, w: play_tex.width as u16, h: play_tex.height as u16};
+                let to_pos_play = Vec2i((WIDTH - play_tex.width) as i32 / 2, (HEIGHT - play_tex.height) as i32 / 3 * 2);
+                screen.bitblt(&play_tex, from_rect_play, to_pos_play);
             }
             Mode::Play(paused) => {
                 // Call screen's drawing methods to render the game state
@@ -192,11 +216,30 @@ impl Mode {
                 draw_game(state, data, screen);
             }
             Mode::Options => {
-                screen.clear(Rgba(80, 255, 255, 255));
+                screen.clear(Rgba(0, 0, 0, 255));
+                let options_tex = create_text_tex(&data.font, "OPTIONS".to_string());
+                let from_rect_options = Rect{x: 0, y: 0, w: options_tex.width as u16, h: options_tex.height as u16};
+                let to_pos_options = Vec2i((WIDTH - options_tex.width) as i32 / 2, (HEIGHT - options_tex.height) as i32 / 6);
+                screen.bitblt(&options_tex, from_rect_options, to_pos_options);
+
+                let score_tex = create_text_tex(&data.font, "S>>>Highscore".to_string());
+                let from_rect_score = Rect{x: 0, y: 0, w: score_tex.width as u16, h: score_tex.height as u16};
+                let to_pos_score = Vec2i((WIDTH - score_tex.width) as i32 / 2, (HEIGHT - score_tex.height) as i32 / 3);
+                screen.bitblt(&score_tex, from_rect_score, to_pos_score);
+
+                let quit_tex = create_text_tex(&data.font, "Q>>>Quit".to_string());
+                let from_rect_quit = Rect{x: 0, y: 0, w: quit_tex.width as u16, h: quit_tex.height as u16};
+                let to_pos_quit = Vec2i((WIDTH - quit_tex.width) as i32 / 2, (HEIGHT - quit_tex.height) as i32 / 2);
+                screen.bitblt(&quit_tex, from_rect_quit, to_pos_quit);
+
+                let play_tex = create_text_tex(&data.font, "P>>>Play".to_string());
+                let from_rect_play = Rect{x: 0, y: 0, w: play_tex.width as u16, h: play_tex.height as u16};
+                let to_pos_play = Vec2i((WIDTH - play_tex.width) as i32 / 2, (HEIGHT - play_tex.height) as i32 / 3 * 2);
+                screen.bitblt(&play_tex, from_rect_play, to_pos_play);
             }
             Mode::ScoreBoard => {
-                screen.clear(Rgba(255, 80, 255, 255));
-                let highscore_tex = create_text_tex(&data.font, "Highscore:".to_string() + &data.highscore.to_string());
+                screen.clear(Rgba(0, 0, 0, 255));
+                let highscore_tex = create_text_tex(&data.font, "Highscore:    ".to_string() + &data.highscore.to_string());
                 // todo: change stack_horizontal to fill space rather than take shortest character
                 let from_rect = Rect{x: 0, y: 0, w: highscore_tex.width as u16, h: highscore_tex.height as u16};
                 let to_pos = Vec2i((WIDTH - highscore_tex.width) as i32 / 2, (HEIGHT - highscore_tex.height) as i32 / 2);
@@ -237,7 +280,7 @@ fn main() {
     let obstacle_tex_down = Rc::new(Texture::with_file(Path::new("./res/pipe_down.png")));
     let title_tex = Rc::new(Texture::with_file(Path::new("./res/TitleImage.png")));
     let wing_tex = Rc::new(Texture::with_file(Path::new("./res/wings.png")));
-    let sky_tex = Rc::new(Texture::with_file(Path::new("./res/flappy_sky.png")));
+    let sky_tex = Rc::new(Texture::with_file(Path::new("./res/flappy_sky_dilute.png")));
 
     let mut game_sound = Sound::new();
     let _ = game_sound.init_manager();
@@ -349,7 +392,7 @@ fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
     
     let score_rect = Rect{x: (WIDTH / 2 - 70) as i32, y: 0, w: 160, h: 30};
     screen.rect(score_rect, Rgba(0, 0, 0,255));
-    screen.rect_outline(score_rect, Rgba(0, 0, 255, 255));
+    screen.rect_outline(score_rect, Rgba(255, 255, 100, 255));
     let score_text_rect = Rect{x: 0, y: 0, w: state.score_tex.width as u16, h: state.score_tex.height as u16};
     let score_text_pos = Vec2i((WIDTH / 2) as i32, 10);
     
@@ -378,7 +421,8 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
     }
     let mut accel_down = state.accel_down;
     if input.key_pressed(VirtualKeyCode::Up) {
-        accel_down = -5;
+        //accel_down = -5;
+        accel_down = -2;
         data.sound.play_sound("jump".to_string());
         //player.vy -= 40; //method 2
         state.player.wing.animations[0].current_frame = 0;
