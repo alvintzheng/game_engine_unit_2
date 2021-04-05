@@ -94,6 +94,7 @@ struct GameData {
     sound: Sound,
     sky_tex: Rc<Texture>,
     highscore: usize,
+    sound_on: bool,
     // should not use hashmap? because result of get() will be option?
 }
 
@@ -130,9 +131,9 @@ impl Mode {
                         data.highscore = state.score;
                     }
                     ///////////////////////////////////////
-                    save_data(data.highscore);
-                    let reloaded_data = load_data();
-                    data.highscore = reloaded_data; 
+                    save_data(data.highscore, data.sound_on);
+                    // let reloaded_data = load_data();
+                    // data.highscore = reloaded_data; 
 
                     Mode::EndGame // should be endgame
                 }
@@ -165,6 +166,11 @@ impl Mode {
                 }
                 else if input.key_pressed(VirtualKeyCode::S) {
                     Mode::ScoreBoard
+                }
+                else if input.key_pressed(VirtualKeyCode::D) {
+                    data.sound_on = !data.sound_on;
+                    save_data(data.highscore, data.sound_on);
+                    self
                 }
                 else if input.key_pressed(VirtualKeyCode::Q) {
                     panic!();
@@ -264,6 +270,14 @@ impl Mode {
                 let from_rect_play = Rect{x: 0, y: 0, w: play_tex.width as u16, h: play_tex.height as u16};
                 let to_pos_play = Vec2i((WIDTH - play_tex.width) as i32 / 2, (HEIGHT - play_tex.height) as i32 / 3 * 2);
                 screen.bitblt(&play_tex, from_rect_play, to_pos_play);
+
+                let mut owned_string = "D>>>Sound: ".to_owned();
+                let borrowed_string = data.sound_on.to_string();
+                owned_string.push_str(&borrowed_string);
+                let sound_tex = create_text_tex(&data.font, owned_string);
+                let from_rect_sound = Rect{x: 0, y: 0, w: sound_tex.width as u16, h: sound_tex.height as u16};
+                let to_pos_sound = Vec2i((WIDTH - sound_tex.width) as i32 / 2, (HEIGHT - sound_tex.height) as i32 / 6 * 5);
+                screen.bitblt(&sound_tex, from_rect_sound, to_pos_sound);
             }
             Mode::ScoreBoard => {
                 screen.clear(Rgba(0, 0, 0, 255));
@@ -281,11 +295,11 @@ impl Mode {
     }
 }
 
-fn save_data(score: usize) {
-    save_file("save_flappy_bird.bin", 0, &score).unwrap();
+fn save_data(score: usize, sound_on: bool) {
+    save_file("save_flappy_bird.bin", 0, &(score, sound_on)).unwrap();
 }
 
-fn load_data() -> usize {
+fn load_data() -> (usize, bool) {
     load_file("save_flappy_bird.bin", 0).unwrap()
 } 
 
@@ -343,7 +357,8 @@ fn main() {
     };
     let font = fontdue::Font::from_bytes(font, settings).unwrap();
 
-    let reloaded_data = load_data();
+    let (highscore, sound_on) = load_data();
+    //let (highscore, sound_on) = (0, true);
     //let reloaded_data = 0;
     //data.highscore = reloaded_data; 
 
@@ -356,7 +371,8 @@ fn main() {
         wing_tex: wing_tex,
         sound: game_sound,
         sky_tex: sky_tex,
-        highscore: reloaded_data,
+        highscore: highscore,
+        sound_on: sound_on,
     };
 
     let mut state = new_game(&data);
@@ -466,7 +482,10 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
     if input.key_pressed(VirtualKeyCode::Up) {
         accel_down = -4;
         //accel_down = -2;
-        data.sound.play_sound("jump".to_string());
+        if data.sound_on {
+            data.sound.play_sound("jump".to_string());
+        }
+        
         //player.vy -= 40; //method 2
         state.player.wing.animations[0].current_frame = 0;
     } else {
@@ -553,7 +572,10 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
             let _ = state.obstacles.remove(0);
             let _2 = state.obstacles.remove(0);
             state.score += 1;
-            data.sound.play_sound("pass".to_string());
+            if data.sound_on {
+                data.sound.play_sound("pass".to_string());
+            }
+            
             state.score_tex = create_score_tex(&data.font, state.score);
     }
     player.update();
@@ -563,7 +585,9 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
     for wall in state.walls.iter() {
         if rect_touching(wall.rect, player.rect) {
             state.finished = true;
-            data.sound.play_sound("die".to_string());
+            if data.sound_on {
+                data.sound.play_sound("die".to_string());
+            }
             break;
         }
     }
