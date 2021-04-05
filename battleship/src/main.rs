@@ -103,12 +103,12 @@ impl Mode {
                         //check if computer won
                         if game.humansunk == 2 { 
                             println!("You lost!");
-                            Mode::EndGame
+                            Mode::LostGame
                         }
                         //check if human won
                         else if game.compsunk == 2 {
                             println!("You won!");
-                            Mode::EndGame
+                            Mode::WonGame
                         }
                         else if input.key_pressed(VirtualKeyCode::Q) {
                             Mode::EndGame
@@ -120,7 +120,7 @@ impl Mode {
                             Mode::Reset
                         }else if input.mouse_pressed(0) {
                             
-                            println!("human's turn");
+                            //println!("human's turn");
 
                             let xcoor = input.mouse().unwrap().0 as i32;
                             let ycoor = input.mouse().unwrap().1 as i32;
@@ -130,7 +130,7 @@ impl Mode {
                             if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
                                 data.sound.play_sound("hit".to_string());
                                 game.compsunk = game.compsunk + 1;
-                                println!("compsunk: {}", game.compsunk);
+                                //println!("compsunk: {}", game.compsunk);
                                 game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8); //hit opponent
                             } else { //missed
                                 data.sound.play_sound("splash".to_string());
@@ -142,21 +142,17 @@ impl Mode {
                             *game = reloaded_game; 
                             //assert_eq!(reloaded_game.name,"Steve".to_string());
 
-
-
-
-                            //this one works
+                            
                             Mode::Play(Turn::Computer)
                             
                         }
-                        //this one works
                         else{
                             Mode::Play(Turn::Human)
                         }
                     }
                     Turn::Computer => {
 
-                        println!("computer's turn");
+                        //println!("computer's turn");
 
                         //if guesses.smartguessing(){
                             //Vec2i theguess= guesses.makeguess()
@@ -179,7 +175,7 @@ impl Mode {
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
                             data.sound.play_sound("hit".to_string());
                             game.humansunk = game.humansunk + 1;
-                            println!("humansunk: {}", game.humansunk);
+                            //println!("humansunk: {}", game.humansunk);
                             game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
                             Mode::Play(Turn::Human)
 
@@ -266,7 +262,6 @@ impl Mode {
                 Mode::Play(Turn::Human)
             }
             Mode::WonGame => {
-                /////reset isnt happening
                 //resetting
                 let oppmap = Tilemap::new(
                     Vec2i(0, 0), //location
@@ -400,14 +395,14 @@ impl Mode {
                 game.tilemaps[1].draw(screen);
             }
             Mode::Options => {
-                screen.clear(Rgba(80, 255, 255, 255));
+                screen.clear(Rgba(0, 0, 0, 255));
 
                 let options_tex = create_text_tex(&data.font, "OPTIONS".to_string());
                 let from_rect_options = Rect{x: 0, y: 0, w: options_tex.width as u16, h: options_tex.height as u16};
                 let to_pos_options = Vec2i((WIDTH - options_tex.width) as i32 / 2, (HEIGHT - options_tex.height) as i32 / 6);
                 screen.bitblt(&options_tex, from_rect_options, to_pos_options);
 
-                let score_tex = create_text_tex(&data.font, "S>>>Highscore".to_string());
+                let score_tex = create_text_tex(&data.font, "S>>>Score".to_string());
                 let from_rect_score = Rect{x: 0, y: 0, w: score_tex.width as u16, h: score_tex.height as u16};
                 let to_pos_score = Vec2i((WIDTH - score_tex.width) as i32 / 2, (HEIGHT - score_tex.height) as i32 / 3);
                 screen.bitblt(&score_tex, from_rect_score, to_pos_score);
@@ -423,13 +418,23 @@ impl Mode {
                 screen.bitblt(&play_tex, from_rect_play, to_pos_play);
             }
             Mode::ScoreBoard => {
-                screen.clear(Rgba(255, 80, 255, 255));
+                screen.clear(Rgba(0, 0, 0, 255));
 
-                let highscore_tex = create_text_tex(&data.font, "Highscore:    ".to_string() + &data.highscore.to_string());
+                let highscore_tex = create_text_tex(&data.font, "TALLY".to_string());
                 // todo: change stack_horizontal to fill space rather than take shortest character
                 let from_rect = Rect{x: 0, y: 0, w: highscore_tex.width as u16, h: highscore_tex.height as u16};
-                let to_pos = Vec2i((WIDTH - highscore_tex.width) as i32 / 2, (HEIGHT - highscore_tex.height) as i32 / 2);
+                let to_pos = Vec2i((WIDTH - highscore_tex.width) as i32 / 2, (HEIGHT - highscore_tex.height) as i32 / 4);
                 screen.bitblt(&highscore_tex, from_rect, to_pos);
+
+                let comp_score_tex = create_text_tex(&data.font, "Computer:    ".to_string() + &game.humansunk.to_string());
+                let comp_from_rect = Rect{x: 0, y: 0, w: comp_score_tex.width as u16, h: comp_score_tex.height as u16};
+                let comp_to_pos = Vec2i((WIDTH - comp_score_tex.width) as i32 / 2, (HEIGHT - comp_score_tex.height) as i32 / 2);
+                screen.bitblt(&comp_score_tex, comp_from_rect, comp_to_pos);
+
+                let hum_score_tex = create_text_tex(&data.font, "You:    ".to_string() + &game.compsunk.to_string());
+                let hum_from_rect = Rect{x: 0, y: 0, w: hum_score_tex.width as u16, h: hum_score_tex.height as u16};
+                let hum_to_pos = Vec2i((WIDTH - hum_score_tex.width) as i32 / 2, (HEIGHT - hum_score_tex.height) as i32 / 4 * 3);
+                screen.bitblt(&hum_score_tex, hum_from_rect, hum_to_pos);
             }
             Mode::Reset => {
                 screen.clear(Rgba(0, 0, 0, 255));
@@ -439,14 +444,14 @@ impl Mode {
             }
             Mode::WonGame => { 
                 screen.clear(Rgba(0, 0, 0, 255));
-                let tex = create_text_tex(&data.font, "WINNER".to_string());
+                let tex = create_text_tex(&data.font, "WINNER!".to_string());
                 let from_rect = Rect{x: 0, y: 0, w: tex.width as u16, h: tex.height as u16};
                 let to_pos = Vec2i((WIDTH - tex.width) as i32 / 2, (HEIGHT - tex.height) as i32 / 3 * 2);
                 screen.bitblt(&tex, from_rect, to_pos);
             }
             Mode::LostGame => { 
                 screen.clear(Rgba(0, 0, 0, 255));
-                let tex = create_text_tex(&data.font, "GAME OVER".to_string());
+                let tex = create_text_tex(&data.font, "GAME OVER!".to_string());
                 let from_rect = Rect{x: 0, y: 0, w: tex.width as u16, h: tex.height as u16};
                 let to_pos = Vec2i((WIDTH - tex.width) as i32 / 2, (HEIGHT - tex.height) as i32 / 3 * 2);
                 screen.bitblt(&tex, from_rect, to_pos);
