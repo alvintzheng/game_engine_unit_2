@@ -7,3 +7,7 @@
 !*.mp3
 !save.bin
 *count.rs
+
+# Added by cargo
+
+/target
