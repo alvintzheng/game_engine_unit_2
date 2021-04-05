@@ -249,8 +249,8 @@ fn main() {
     let mut mode = Mode::Title;
     let mut font:&[u8];// = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
 
-    if cfg!(target_os = "macos") {
-        font = include_bytes!("../res/Exo2-Regular.ttf");
+    if cfg!(target_os = "windows") {
+        font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
       } else {
         font = include_bytes!("../res/Exo2-Regular.ttf") as &[u8];
       }

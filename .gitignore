@@ -5,4 +5,5 @@
 !*.toml
 !*.png
 !*.mp3
+!save.bin
 *count.rs
