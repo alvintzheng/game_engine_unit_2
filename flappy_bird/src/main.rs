@@ -284,7 +284,7 @@ fn main() {
 
     let mut game_sound = Sound::new();
     let _ = game_sound.init_manager();
-    ///////////////mp3 files aren't in res folder
+
     game_sound.add_sound("jump".to_string(), "./res/jump.mp3".to_string());
     game_sound.add_sound("pass".to_string(), "./res/pass.mp3".to_string());
     game_sound.add_sound("die".to_string(), "./res/die.mp3".to_string());

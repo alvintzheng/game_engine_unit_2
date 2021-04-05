@@ -50,6 +50,7 @@ struct GameState {
 
 struct GameData {
     sound: Sound,
+    font: fontdue::Font,
 }
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -450,11 +451,24 @@ fn main() {
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH as u32, HEIGHT as u32, surface_texture).unwrap()
     };
+
+    //sound
     let mut game_sound = Sound::new();
     let _ = game_sound.init_manager();
     game_sound.add_sound("hit".to_string(), "./res/hit.mp3".to_string());
     game_sound.add_sound("splash".to_string(), "./res/splash.mp3".to_string());
-    let mut data = GameData {sound: game_sound};
+
+    //font
+    let mut font:&[u8];
+    font = include_bytes!("../res/Exo2-Regular.ttf") as &[u8];
+    let settings = fontdue::FontSettings {
+        scale: 12.0,
+        ..fontdue::FontSettings::default()
+    };
+    let font = fontdue::Font::from_bytes(font, settings).unwrap();
+
+    let mut data = GameData {sound: game_sound, font: font};
+
     let title_image = Rc::new(Texture::with_file(Path::new("res/logo.png")));
 
     //create Tileset from tileset.png image
@@ -547,49 +561,7 @@ fn main() {
 
     // 6 tilemaps, each 4x4 tiles
     //tilemaps join together into a 3x2 map, i.e. 12x8 tile grid
-    //opponent's ships
-
-    //  let oppmap = Tilemap::new(
-    //     Vec2i(0, 0), //location
-    //     (12, 8),
-    //     &boattileset,
-    //     vec![
-    //         3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
-    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-    //         0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, //
-    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, //
-    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-    //         3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
-    //     ],
-    // );
-    // //your ships
-    // let mymap = Tilemap::new(
-    //     Vec2i(0, MAPDIM * 2), //location
-    //     (12, 8),
-    //     &boattileset,
-    //     vec![
-    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
-    //         1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
-    //         1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, //x mark
-    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-    //         10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-    //         14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-    //     ],
-    // ); 
-
     
-    
-    //  // initial game state...
-    // let mut state = GameState {
-    //     tilemaps: vec![oppmap, mymap], //vector of tilemaps
-    //     title_image: title_image,
-    //     compsunk: 0,
-    //     humansunk: 0,
-    // }; 
 
     let mut mode = Mode::Title;
     //load saved GameState
@@ -662,6 +634,23 @@ fn main() {
     });
 }
 
+
+fn create_text_tex(font: &fontdue::Font, text: String) -> Rc<Texture> {
+    let font_size = 30.0;
+    let mut char_textures: Vec<Texture> = vec![];
+    let mut i = 0;
+    while i < text.len() {
+        let character = text.chars().nth(i).unwrap();
+        let (metrics, bitmap) = font.rasterize(character, font_size);
+        let mut char_tex = Texture::from_vec(bitmap, metrics.width, metrics.height, 1);
+        char_tex.convert_to_rgba();
+        char_textures.push(char_tex);
+        i += 1;
+    }
+    return Rc::new(texture::stack_horizontal(char_textures));
+}
+
+/*
 fn draw_game(state: &GameState, screen: &mut Screen) {
     // Call screen's drawing methods to render the game state
     screen.clear(Rgba(80, 80, 80, 255));
@@ -670,7 +659,7 @@ fn draw_game(state: &GameState, screen: &mut Screen) {
     state.tilemaps[0].draw(screen);
     state.tilemaps[1].draw(screen);
 }
-/*
+
 fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     // Player control goes here
 
