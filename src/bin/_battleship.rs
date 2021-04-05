@@ -15,28 +15,6 @@ use savefile::prelude::*;
 #[macro_use]
 extern crate savefile_derive;
 
-/* // Whoa what's this?
-// Mod without brackets looks for a nearby file.
-mod screen;
-// Then we can use as usual.  The screen module will have drawing utilities.
-use screen::Screen;
-// Collision will have our collision bodies and contact types
-mod collision;
-// Lazy glob imports
-use collision::*;
-// Texture has our image loading and processing stuff
-mod texture;
-use texture::Texture;
-
-// And we'll put our general purpose types like color and geometry here:
-mod types;
-use types::*;
-
-mod tiles;
-use tiles::*;
-
-mod sound;
-use sound::*; */
 
 use unit2::screen::Screen;
 use unit2::collision::*;
@@ -44,7 +22,6 @@ use unit2::texture::Texture;
 use unit2::types::*;
 use unit2::tiles::*;
 use unit2::sound::*;
-use unit2::texture::stack_horizontal;
 
 // Now this main module is just for the run-loop and rules processing.
 #[derive(Savefile)]
@@ -58,7 +35,6 @@ struct GameState {
 
 struct GameData {
     sound: Sound,
-    font: fontdue::Font,
 }
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
@@ -75,8 +51,6 @@ enum Mode {
     ScoreBoard, 
     Reset,
     EndGame,
-    WonGame,
-    LostGame,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -93,9 +67,9 @@ impl Mode {
 
                 if input.key_pressed(VirtualKeyCode::P) {
                     Mode::Play(Turn::Human)
-                } else if input.key_pressed(VirtualKeyCode::Q) {
-                    //Mode::EndGame
-                    panic!();
+                }
+                else if input.key_pressed(VirtualKeyCode::Q) {
+                    Mode::EndGame
                 } else if input.key_pressed(VirtualKeyCode::O) {
                         Mode::Options
                 }else if input.key_pressed(VirtualKeyCode::R) {
@@ -107,18 +81,20 @@ impl Mode {
             Mode::Play(pm) => {
                 match pm {
                     Turn::Human => {
+                        //move update_game to here
+                        // if let Some(pm) = pm.update(game, input) {
+                        //     Mode::Play(pm);
+                        // }
 
                         //check if computer won
-                        if game.humansunk == 2 { 
+                        //"path statement with no effect"
+                        /* if game.humansunk == 2 { 
                             println!("You lost!");
-                            Mode::LostGame
-                        }
-                        //check if human won
-                        else if game.compsunk == 2 {
-                            println!("You won!");
-                            Mode::WonGame
-                        }
-                        else if input.key_pressed(VirtualKeyCode::Q) {
+                            Mode::EndGame
+                        } */
+
+                        //these dont respond anymore
+                        if input.key_pressed(VirtualKeyCode::Q) {
                             Mode::EndGame
                         }else if input.key_pressed(VirtualKeyCode::O) {
                             Mode::Options
@@ -128,7 +104,7 @@ impl Mode {
                             Mode::Reset
                         }else if input.mouse_pressed(0) {
                             
-                            //println!("human's turn");
+                            println!("human's turn");
 
                             let xcoor = input.mouse().unwrap().0 as i32;
                             let ycoor = input.mouse().unwrap().1 as i32;
@@ -138,7 +114,7 @@ impl Mode {
                             if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
                                 data.sound.play_sound("hit".to_string());
                                 game.compsunk = game.compsunk + 1;
-                                //println!("compsunk: {}", game.compsunk);
+                                println!("compsunk: {}", game.compsunk);
                                 game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8); //hit opponent
                             } else { //missed
                                 data.sound.play_sound("splash".to_string());
@@ -150,17 +126,27 @@ impl Mode {
                             *game = reloaded_game; 
                             //assert_eq!(reloaded_game.name,"Steve".to_string());
 
-                            
+                            //check if human won
+                            //endgame doesnt work
+                            //"path statement with no effect"
+                            /*  if game.compsunk == 2 {
+                                println!("You won!");
+                                Mode::EndGame;
+                            } */
+
+
+                            //this one works
                             Mode::Play(Turn::Computer)
                             
                         }
+                        //this one works
                         else{
                             Mode::Play(Turn::Human)
                         }
                     }
                     Turn::Computer => {
 
-                        //println!("computer's turn");
+                        println!("computer's turn");
 
                         //if guesses.smartguessing(){
                             //Vec2i theguess= guesses.makeguess()
@@ -183,7 +169,7 @@ impl Mode {
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
                             data.sound.play_sound("hit".to_string());
                             game.humansunk = game.humansunk + 1;
-                            //println!("humansunk: {}", game.humansunk);
+                            println!("humansunk: {}", game.humansunk);
                             game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
                             Mode::Play(Turn::Human)
 
@@ -211,7 +197,7 @@ impl Mode {
                 }else if input.key_pressed(VirtualKeyCode::R) {
                     Mode::Reset
                 }else if input.key_pressed(VirtualKeyCode::P) {
-                    Mode::Play(Turn::Human)
+                    Mode::Play(Turn::Human) //need to track and save turn and what the board looks like
                 } else {
                     self
                 }
@@ -269,106 +255,6 @@ impl Mode {
                 save_game(&game);
                 Mode::Play(Turn::Human)
             }
-            Mode::WonGame => {
-                //resetting
-                let oppmap = Tilemap::new(
-                    Vec2i(0, 0), //location
-                    (12, 8),
-                    &game.tilemaps[0].tileset,
-                    vec![
-                        3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
-                    ],
-                );
-                //your ships
-                let mymap = Tilemap::new(
-                    Vec2i(0, MAPDIM * 2), //location
-                    (12, 8),
-                    &game.tilemaps[0].tileset,
-                    vec![
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
-                        1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                    ],
-                );
-                // reset to initial game state...
-                game.tilemaps = vec![oppmap, mymap];
-                game.compsunk = 0;
-                game.humansunk = 0;
-                save_game(&game);
-                
-                if input.key_pressed(VirtualKeyCode::Q) {
-                    panic!();
-                } else if input.key_pressed(VirtualKeyCode::P) {
-                    Mode::Play(Turn::Human)
-                } else if input.key_pressed(VirtualKeyCode::T) {
-                    Mode::Title
-                }
-                else {
-                    self
-                }
-            }
-            Mode::LostGame => {
-                //reseting game
-                let oppmap = Tilemap::new(
-                    Vec2i(0, 0), //location
-                    (12, 8),
-                    &game.tilemaps[0].tileset,
-                    vec![
-                        3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-                        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
-                    ],
-                );
-                //your ships
-                let mymap = Tilemap::new(
-                    Vec2i(0, MAPDIM * 2), //location
-                    (12, 8),
-                    &game.tilemaps[0].tileset,
-                    vec![
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
-                        1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
-                    ],
-                );
-                // reset to initial game state...
-                game.tilemaps = vec![oppmap, mymap];
-                game.compsunk = 0;
-                game.humansunk = 0;
-                save_game(&game);
-
-                if input.key_pressed(VirtualKeyCode::Q) {
-                    panic!();
-                } else if input.key_pressed(VirtualKeyCode::P) {
-                    Mode::Play(Turn::Human)
-                } else if input.key_pressed(VirtualKeyCode::T) {
-                    Mode::Title
-                }
-                else {
-                    self
-                }
-            }
             Mode::EndGame => {
                 if input.key_pressed(VirtualKeyCode::Q) {
                     panic!();
@@ -403,66 +289,19 @@ impl Mode {
                 game.tilemaps[1].draw(screen);
             }
             Mode::Options => {
-                screen.clear(Rgba(0, 0, 0, 255));
-
-                let options_tex = create_text_tex(&data.font, "OPTIONS".to_string());
-                let from_rect_options = Rect{x: 0, y: 0, w: options_tex.width as u16, h: options_tex.height as u16};
-                let to_pos_options = Vec2i((WIDTH - options_tex.width) as i32 / 2, (HEIGHT - options_tex.height) as i32 / 6);
-                screen.bitblt(&options_tex, from_rect_options, to_pos_options);
-
-                let score_tex = create_text_tex(&data.font, "S>>>Score".to_string());
-                let from_rect_score = Rect{x: 0, y: 0, w: score_tex.width as u16, h: score_tex.height as u16};
-                let to_pos_score = Vec2i((WIDTH - score_tex.width) as i32 / 2, (HEIGHT - score_tex.height) as i32 / 3);
-                screen.bitblt(&score_tex, from_rect_score, to_pos_score);
-
-                let quit_tex = create_text_tex(&data.font, "Q>>>Quit".to_string());
-                let from_rect_quit = Rect{x: 0, y: 0, w: quit_tex.width as u16, h: quit_tex.height as u16};
-                let to_pos_quit = Vec2i((WIDTH - quit_tex.width) as i32 / 2, (HEIGHT - quit_tex.height) as i32 / 2);
-                screen.bitblt(&quit_tex, from_rect_quit, to_pos_quit);
-
-                let play_tex = create_text_tex(&data.font, "P>>>Play".to_string());
-                let from_rect_play = Rect{x: 0, y: 0, w: play_tex.width as u16, h: play_tex.height as u16};
-                let to_pos_play = Vec2i((WIDTH - play_tex.width) as i32 / 2, (HEIGHT - play_tex.height) as i32 / 3 * 2);
-                screen.bitblt(&play_tex, from_rect_play, to_pos_play);
+                screen.clear(Rgba(80, 255, 255, 255));
             }
             Mode::ScoreBoard => {
-                screen.clear(Rgba(0, 0, 0, 255));
+                screen.clear(Rgba(255, 80, 255, 255));
+                // Creates a dialog with a single "Quit" button
+                
 
-                let highscore_tex = create_text_tex(&data.font, "TALLY".to_string());
-                // todo: change stack_horizontal to fill space rather than take shortest character
-                let from_rect = Rect{x: 0, y: 0, w: highscore_tex.width as u16, h: highscore_tex.height as u16};
-                let to_pos = Vec2i((WIDTH - highscore_tex.width) as i32 / 2, (HEIGHT - highscore_tex.height) as i32 / 4);
-                screen.bitblt(&highscore_tex, from_rect, to_pos);
-
-                let comp_score_tex = create_text_tex(&data.font, "Computer:    ".to_string() + &game.humansunk.to_string());
-                let comp_from_rect = Rect{x: 0, y: 0, w: comp_score_tex.width as u16, h: comp_score_tex.height as u16};
-                let comp_to_pos = Vec2i((WIDTH - comp_score_tex.width) as i32 / 2, (HEIGHT - comp_score_tex.height) as i32 / 2);
-                screen.bitblt(&comp_score_tex, comp_from_rect, comp_to_pos);
-
-                let hum_score_tex = create_text_tex(&data.font, "You:    ".to_string() + &game.compsunk.to_string());
-                let hum_from_rect = Rect{x: 0, y: 0, w: hum_score_tex.width as u16, h: hum_score_tex.height as u16};
-                let hum_to_pos = Vec2i((WIDTH - hum_score_tex.width) as i32 / 2, (HEIGHT - hum_score_tex.height) as i32 / 4 * 3);
-                screen.bitblt(&hum_score_tex, hum_from_rect, hum_to_pos);
             }
             Mode::Reset => {
                 screen.clear(Rgba(0, 0, 0, 255));
             }
             Mode::EndGame => { // Draw game result?
                 screen.clear(Rgba(255, 255, 80, 255));
-            }
-            Mode::WonGame => { 
-                screen.clear(Rgba(0, 0, 0, 255));
-                let tex = create_text_tex(&data.font, "WINNER!".to_string());
-                let from_rect = Rect{x: 0, y: 0, w: tex.width as u16, h: tex.height as u16};
-                let to_pos = Vec2i((WIDTH - tex.width) as i32 / 2, (HEIGHT - tex.height) as i32 / 2);
-                screen.bitblt(&tex, from_rect, to_pos);
-            }
-            Mode::LostGame => { 
-                screen.clear(Rgba(0, 0, 0, 255));
-                let tex = create_text_tex(&data.font, "GAME OVER!".to_string());
-                let from_rect = Rect{x: 0, y: 0, w: tex.width as u16, h: tex.height as u16};
-                let to_pos = Vec2i((WIDTH - tex.width) as i32 / 2, (HEIGHT - tex.height) as i32 / 2);
-                screen.bitblt(&tex, from_rect, to_pos);
             }
         }
     }
@@ -496,24 +335,11 @@ fn main() {
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH as u32, HEIGHT as u32, surface_texture).unwrap()
     };
-
-    //sound
     let mut game_sound = Sound::new();
     let _ = game_sound.init_manager();
     game_sound.add_sound("hit".to_string(), "./res/hit.mp3".to_string());
     game_sound.add_sound("splash".to_string(), "./res/splash.mp3".to_string());
-
-    //font
-    let mut font:&[u8];
-    font = include_bytes!("../../res/Exo2-Regular.ttf") as &[u8];
-    let settings = fontdue::FontSettings {
-        scale: 12.0,
-        ..fontdue::FontSettings::default()
-    };
-    let font = fontdue::Font::from_bytes(font, settings).unwrap();
-
-    let mut data = GameData {sound: game_sound, font: font};
-
+    let mut data = GameData {sound: game_sound};
     let title_image = Rc::new(Texture::with_file(Path::new("./res/logo.png")));
 
     //create Tileset from tileset.png image
@@ -606,7 +432,49 @@ fn main() {
 
     // 6 tilemaps, each 4x4 tiles
     //tilemaps join together into a 3x2 map, i.e. 12x8 tile grid
+    //opponent's ships
+
+    //  let oppmap = Tilemap::new(
+    //     Vec2i(0, 0), //location
+    //     (12, 8),
+    //     &boattileset,
+    //     vec![
+    //         3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 3, //3s are hidden opponents
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+    //         0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, //
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, //
+    //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+    //         3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, //
+    //     ],
+    // );
+    // //your ships
+    // let mymap = Tilemap::new(
+    //     Vec2i(0, MAPDIM * 2), //location
+    //     (12, 8),
+    //     &boattileset,
+    //     vec![
+    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 1, //single ship
+    //         1, 1, 6, 7, 1, 1, 1, 1, 1, 1, 1, 1, //double ship
+    //         1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, //x mark
+    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //         10, 11, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //         14, 15, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
+    //     ],
+    // ); 
+
     
+    
+    //  // initial game state...
+    // let mut state = GameState {
+    //     tilemaps: vec![oppmap, mymap], //vector of tilemaps
+    //     title_image: title_image,
+    //     compsunk: 0,
+    //     humansunk: 0,
+    // }; 
 
     let mut mode = Mode::Title;
     //load saved GameState
@@ -680,23 +548,6 @@ fn main() {
     });
 }
 
-
-fn create_text_tex(font: &fontdue::Font, text: String) -> Rc<Texture> {
-    let font_size = 30.0;
-    let mut char_textures: Vec<Texture> = vec![];
-    let mut i = 0;
-    while i < text.len() {
-        let character = text.chars().nth(i).unwrap();
-        let (metrics, bitmap) = font.rasterize(character, font_size);
-        let mut char_tex = Texture::from_vec(bitmap, metrics.width, metrics.height, 1);
-        char_tex.convert_to_rgba();
-        char_textures.push(char_tex);
-        i += 1;
-    }
-    return Rc::new(stack_horizontal(char_textures));
-}
-
-/*
 fn draw_game(state: &GameState, screen: &mut Screen) {
     // Call screen's drawing methods to render the game state
     screen.clear(Rgba(80, 80, 80, 255));
@@ -705,7 +556,7 @@ fn draw_game(state: &GameState, screen: &mut Screen) {
     state.tilemaps[0].draw(screen);
     state.tilemaps[1].draw(screen);
 }
-
+/*
 fn update_game(state: &mut GameState, input: &WinitInputHelper, frame: usize) {
     // Player control goes here
 
