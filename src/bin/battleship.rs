@@ -93,12 +93,12 @@ impl Mode {
                     Turn::Human => {
 
                         //check if computer won
-                        if game.humansunk == 2 { 
+                        if game.humansunk == 9 { 
                             println!("You lost!");
                             Mode::LostGame
                         }
                         //check if human won
-                        else if game.compsunk == 2 {
+                        else if game.compsunk == 9 {
                             println!("You won!");
                             Mode::WonGame
                         }
@@ -144,28 +144,12 @@ impl Mode {
                     }
                     Turn::Computer => {
 
-                        //println!("computer's turn");
-
-                        //if guesses.smartguessing(){
-                            //Vec2i theguess= guesses.makeguess()
-                            //game.tilemaps[1].set_tile_at(theguess, 4);
-                            //return array of guesses to make instead of just one at a time?
-                        //}
-
-                        //else
-
-                        //random guess
-                        
-                        //let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32;
-                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;  
-                        
                         ///////////// width of screen: 1-384
                         ///////////// height of screen: 128-384
 
                         let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
                         let ycompguess = thread_rng().gen_range(SHEIGHT, HEIGHT) as i32;
-
-                        //let ycompguess = thread_rng().gen_range(257, 511) as i32;  
+  
                         
                         //hits human's ship
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
