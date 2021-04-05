@@ -147,6 +147,11 @@ impl Mode {
                         ///////////// width of screen: 1-384
                         ///////////// height of screen: 128-384
 
+                        //Mac:
+                        //let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32;
+                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;
+
+                        //Windows:
                         let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
                         let ycompguess = thread_rng().gen_range(SHEIGHT, HEIGHT) as i32;
   
@@ -220,7 +225,7 @@ impl Mode {
                 );
                 //your ships
                 let mymap = Tilemap::new(
-                    Vec2i(0, MAPDIM * 2), //location
+                    Vec2i(0, MAPDIM * 2), //location 0,128
                     (12, 8),
                     &game.tilemaps[0].tileset,
                     vec![
