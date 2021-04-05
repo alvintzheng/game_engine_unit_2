@@ -7,6 +7,11 @@ use savefile::prelude::*;
 
 pub const TILE_SZ: usize = 16;
 
+//Windows:
+//pub const SZ: usize = 16;
+//Mac:
+pub const SZ: usize = 32;
+
 /// A graphical tile, we'll implement Copy since it's tiny
 #[derive(Clone, Copy, Savefile)]
 pub struct Tile {
@@ -103,8 +108,8 @@ impl Tilemap {
     pub fn tile_id_at(&self, Vec2i(x, y): Vec2i) -> TileID {
 
             // Translate into map coordinates
-            let x = (x - self.position.0) / TILE_SZ as i32;
-            let y = (y - self.position.1) / TILE_SZ as i32;
+            let x = (x - self.position.0) / SZ as i32;
+            let y = (y - self.position.1) / SZ as i32;
             ///////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
             ///////let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
             assert!(
@@ -127,8 +132,8 @@ impl Tilemap {
     //output: TileID as usize
     pub fn tile_id_num_at(&self, Vec2i(x, y): Vec2i) -> usize {
         // Translate into map coordinates
-        let x = (x - self.position.0) / TILE_SZ as i32;
-        let y = (y - self.position.1) / TILE_SZ as i32;
+        let x = (x - self.position.0) / SZ as i32;
+        let y = (y - self.position.1) / SZ as i32;
         ////////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
         ////////let y = (y - self.position.1) / 32 as i32; //32 coordinates per tile
         assert!(
@@ -159,8 +164,8 @@ impl Tilemap {
     pub fn set_tile_at(&mut self, Vec2i(x, y): Vec2i, id: usize) {
         //pub fn set_tile_at(mut self, Vec2i(x, y): Vec2i, id: usize) {
         // Translate into map coordinates
-        let x = (x - self.position.0) / TILE_SZ as i32; //32 coordinates per tile
-        let y = (y - self.position.1) / TILE_SZ as i32;
+        let x = (x - self.position.0) / SZ as i32; //32 coordinates per tile
+        let y = (y - self.position.1) / SZ as i32;
         ////////let x = (x - self.position.0) / 32 as i32; //32 coordinates per tile
         ////////let y = (y - self.position.1) / 32 as i32;
         println!("x: {}, y: {})", x, y);
