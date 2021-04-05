@@ -318,7 +318,7 @@ fn main() {
         //font = include_bytes!("../res/Exo2-Regular.ttf") as &[u8];
     //  }
     
-    font = include_bytes!("../../res/Exo2-Regular.ttf") as &[u8];
+    font = include_bytes!("..\\..\\res\\Exo2-Regular.ttf") as &[u8];
 
     let settings = fontdue::FontSettings {
         scale: 12.0,
@@ -327,6 +327,7 @@ fn main() {
     let font = fontdue::Font::from_bytes(font, settings).unwrap();
 
     let reloaded_data = load_data();
+    //let reloaded_data = 0;
     //data.highscore = reloaded_data; 
 
     let mut data = GameData {

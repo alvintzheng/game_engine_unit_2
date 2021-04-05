@@ -5,7 +5,8 @@
 !*.toml
 !*.png
 !*.mp3
-!save.bin
+!*save_battleship.bin
+!*save_flappy_bird.bin
 *count.rs
 
 # Added by cargo
