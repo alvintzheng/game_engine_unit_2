@@ -596,10 +596,6 @@ fn main() {
         texture: Rc::new(Texture::with_file(Path::new("./res/tileset.png"))), //bring in image as texture
     });
 
-    // 6 tilemaps, each 4x4 tiles
-    //tilemaps join together into a 3x2 map, i.e. 12x8 tile grid
-    
-
     let mut mode = Mode::Title;
     //load saved GameState
     let mut state = load_game();
