@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug, Savefile)]
 pub struct Rect {
     pub x: i32,
     pub y: i32,
@@ -13,10 +13,10 @@ impl Rect {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug, Savefile)]
 pub struct Vec2i(pub i32,pub i32);
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug, Savefile)]
 pub struct Rgba(pub u8, pub u8, pub u8, pub u8);
 
 // Feel free to add impl blocks with convenience functions

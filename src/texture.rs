@@ -1,7 +1,10 @@
 use crate::types::Rect;
 use image::{self, RgbaImage};
 use std::path::Path;
+extern crate savefile;
+use savefile::prelude::*;
 
+#[derive(Savefile)]
 pub struct Texture {
     pub image: Vec<u8>,
     pub width: usize,

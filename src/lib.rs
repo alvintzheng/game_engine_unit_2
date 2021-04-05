@@ -7,3 +7,6 @@ pub mod sprite;
 pub mod texture;
 pub mod tiles;
 pub mod types;
+
+#[macro_use]
+extern crate savefile_derive;

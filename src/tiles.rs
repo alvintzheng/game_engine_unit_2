@@ -2,18 +2,20 @@ use crate::texture::Texture;
 use crate::types::{Rect, Vec2i};
 use crate::screen::{Screen};
 use std::rc::Rc;
+extern crate savefile;
+use savefile::prelude::*;
 
 pub const TILE_SZ: usize = 16;
 //pub const TILE_SZ: usize = 32;
 /// A graphical tile, we'll implement Copy since it's tiny
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Savefile)]
 pub struct Tile {
     pub oppgrid: bool, //whether tile is part of opponent's grid or player's grid
     pub opphit: bool,  //whether opponent has ship in that tile, switch if it is hit
     pub myship: bool,  // whether player has a ship in that tile, switch if it is hit
 }
 /// A set of tiles used in multiple Tilemaps
-#[derive(Clone)]
+#[derive(Clone, Savefile)]
 pub struct Tileset {
     // Tile size is a constant, so we can find the tile in the texture using math
     // (assuming the texture is a grid of tiles).
@@ -23,7 +25,7 @@ pub struct Tileset {
                               // Maybe not always the best choice if there aren't many tiles in a tileset!
 }
  /// Indices into a Tileset
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Savefile)]
 pub struct TileID(usize); 
 /// Indices into a Tileset
 
@@ -64,7 +66,7 @@ impl Tileset {
 }
 
 /// An actual tilemap
-#[derive(Clone)]
+#[derive(Clone, Savefile)]
 pub struct Tilemap {
     /// Where the tilemap is in space, use your favorite number type here
     pub position: Vec2i,

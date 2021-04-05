@@ -2,7 +2,7 @@ use crate::types::Rect;
 use image::{self, RgbaImage};
 use std::path::Path;
 extern crate savefile;
-use savefile::prelude::*;
+use savefile::prelude::Savefile;
 
 
 #[derive(Savefile)]

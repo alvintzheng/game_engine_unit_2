@@ -17,26 +17,18 @@ extern crate savefile_derive;
 
 // Whoa what's this?
 // Mod without brackets looks for a nearby file.
-mod screen;
 // Then we can use as usual.  The screen module will have drawing utilities.
-use screen::Screen;
+use unit2::screen::Screen;
 // Collision will have our collision bodies and contact types
-mod collision;
 // Lazy glob imports
-use collision::*;
+use unit2::collision::*;
 // Texture has our image loading and processing stuff
-mod texture;
-use texture::Texture;
+use unit2::texture::Texture;
 
 // And we'll put our general purpose types like color and geometry here:
-mod types;
-use types::*;
-
-mod tiles;
-use tiles::*;
-
-mod sound;
-use sound::*;
+use unit2::types::*;
+use unit2::tiles::*;
+use unit2::sound::*;
 
 // Now this main module is just for the run-loop and rules processing.
 #[derive(Savefile)]
@@ -355,7 +347,7 @@ fn main() {
     game_sound.add_sound("hit".to_string(), "./res/hit.mp3".to_string());
     game_sound.add_sound("splash".to_string(), "./res/splash.mp3".to_string());
     let mut data = GameData {sound: game_sound};
-    let title_image = Rc::new(Texture::with_file(Path::new("res/logo.png")));
+    let title_image = Rc::new(Texture::with_file(Path::new("./res/logo.png")));
 
     //create Tileset from tileset.png image
     let boattileset = Rc::new(Tileset {
@@ -442,7 +434,7 @@ fn main() {
                 myship: true,
             }, //pirate ship 4 - 15
         ],
-        texture: Rc::new(Texture::with_file(Path::new("tileset.png"))), //bring in image as texture
+        texture: Rc::new(Texture::with_file(Path::new("./res/tileset.png"))), //bring in image as texture
     });
 
     // 6 tilemaps, each 4x4 tiles
@@ -504,12 +496,13 @@ fn main() {
     let start = Instant::now();
     // Track end of the last frame
     let mut since = Instant::now();
+    let camera_position = Vec2i(0,0);
     event_loop.run(move |event, _, control_flow| {
 
 
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
-            let mut screen = Screen::wrap(pixels.get_frame(), WIDTH, HEIGHT, DEPTH);
+            let mut screen = Screen::wrap(pixels.get_frame(), WIDTH, HEIGHT, DEPTH, camera_position);
             screen.clear(Rgba(0, 0, 0, 0));
 
             // change to draw game using state and mode, i.e. mode.draw_game(state)
