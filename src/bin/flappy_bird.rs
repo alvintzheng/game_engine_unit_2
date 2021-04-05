@@ -120,6 +120,7 @@ impl Mode {
                     self
                 }
             }
+            //actively flying
             Mode::Play(paused) => {
                 if !paused {
                     update_game(state, input, data);
@@ -190,6 +191,7 @@ impl Mode {
                     self
                 }
             }
+            //on play screen while dead
             Mode::EndGame => {
                 if input.key_pressed(VirtualKeyCode::T) {
                     Mode::Title
@@ -197,6 +199,18 @@ impl Mode {
                 else if input.key_pressed(VirtualKeyCode::P) {
                     *state = new_game(data);
                     Mode::Play(false)
+                }
+                else if input.key_pressed(VirtualKeyCode::T) {
+                    Mode::Title
+                }
+                else if input.key_pressed(VirtualKeyCode::S) {
+                    Mode::ScoreBoard
+                }
+                else if input.key_pressed(VirtualKeyCode::Q) {
+                    panic!();
+                }
+                else if input.key_pressed(VirtualKeyCode::O) {
+                    Mode::Options
                 }
                 else {
                     self
@@ -318,7 +332,10 @@ fn main() {
         //font = include_bytes!("../res/Exo2-Regular.ttf") as &[u8];
     //  }
     
-    font = include_bytes!("..\\..\\res\\Exo2-Regular.ttf") as &[u8];
+    //Mac
+    font = include_bytes!("../../res/Exo2-Regular.ttf");
+    //Windows
+    //font = include_bytes!("..\\..\\res\\Exo2-Regular.ttf") as &[u8];
 
     let settings = fontdue::FontSettings {
         scale: 12.0,
