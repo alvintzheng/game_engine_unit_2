@@ -8,10 +8,9 @@ use savefile::prelude::*;
 pub const TILE_SZ: usize = 16;
 
 //Windows:
-pub const SZ: usize = 16;
-
+//pub const SZ: usize = 16;
 //Mac:
-//pub const SZ: usize = 32;
+pub const SZ: usize = 32;
 
 /// A graphical tile, we'll implement Copy since it's tiny
 #[derive(Clone, Copy, Savefile)]
@@ -124,11 +123,10 @@ impl Tilemap {
                 y,
                 self.dims.1
             ); 
-            //Windows?
-            self.map[y as usize * self.dims.0 + x as usize]
-
-            //Mac:
-            //self.map[y as usize + x as usize]
+            ///////Windows
+            //self.map[y as usize * self.dims.0 + x as usize]
+            ///////Mac:
+            self.map[y as usize + x as usize]
 
     }
     //input: window coordinates
@@ -181,11 +179,8 @@ impl Tilemap {
             y,
             self.dims.1
         );
-        //Mac 
-        //& Windows?
+        //Mac & Windows
         self.map[y as usize * self.dims.0 + x as usize] = TileID(id); //self.dims.0 = 12
-
-        //self.map[y as usize + x as usize] = TileID(id); //self.dims.0 = 12
     }
 
     //from Slack comments

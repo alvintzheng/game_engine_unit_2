@@ -42,12 +42,17 @@ struct GameData {
 // seconds per frame
 const DT: f64 = 1.0 / 60.0;
 const MAPDIM: i32 = 64;
-//const WIDTH: usize = MAPDIM as usize * 3; //192
-//const HEIGHT: usize = MAPDIM as usize * 4; //256
+
 const WIDTH: usize = 16*12; //192
 const HEIGHT: usize = 16*16; //256
-const SHEIGHT: usize = 16*8; //128
 const DEPTH: usize = 4;
+
+///////////Mac: 
+const XMAX: usize = 384;
+const YMAX: usize = 384;
+//////////Windows: 
+//const XMAX: usize = 192;
+//const YMAX: usize = 256;
 
 //8 squares H by 12 squares W
 
@@ -148,14 +153,17 @@ impl Mode {
                         ///////////// height of screen: 128-384
 
                         //Mac:
-                        //let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32;
-                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32;
+                        //let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32; //1-383
+                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32; //128-383
 
                         //Windows:
-                        let xcompguess = thread_rng().gen_range(1, WIDTH) as i32;
-                        let ycompguess = thread_rng().gen_range(SHEIGHT, HEIGHT) as i32;
+                        //let xcompguess = thread_rng().gen_range(1, WIDTH) as i32; //1-192
+                        //let ycompguess = thread_rng().gen_range(SHEIGHT, HEIGHT) as i32; //128-256
   
-                        
+                        //both
+                        let xcompguess = thread_rng().gen_range(1, XMAX-1) as i32; //Mac: XMAX=384, Windows: XMAX=192
+                        let ycompguess = thread_rng().gen_range(HEIGHT/2, YMAX-1) as i32; //Mac: YMAX=384, Windows: YMAX=256
+
                         //hits human's ship
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
                             data.sound.play_sound("hit".to_string());
@@ -372,8 +380,8 @@ impl Mode {
                 let display_rect = Rect {
                     x: 0,
                     y: 0,
-                    w: 200,
-                    h: 210,
+                    w: 186,
+                    h: 158,
                 };
                 screen.bitblt(&game.title_image, display_rect, Vec2i(0, 0));
             }
