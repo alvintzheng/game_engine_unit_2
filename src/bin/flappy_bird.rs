@@ -568,7 +568,9 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
     for obs in state.obstacles.iter() {
         if rect_touching(obs.hitbox.rect, player.rect) {
             state.finished = true;
-            data.sound.play_sound("die".to_string());
+            if data.sound_on {
+                data.sound.play_sound("die".to_string());
+            }
             break;
         }
     }
