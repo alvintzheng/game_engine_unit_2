@@ -43,5 +43,3 @@ impl<'fb> DrawBirdExt for Screen<'fb> {
         self.draw_sprite(&mut b.wing);
     }
 }
-
-//implement drawbird so that wing position depends on body position

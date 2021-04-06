@@ -2,7 +2,6 @@ use crate::types::Rect;
 use image::{self, RgbaImage};
 use std::path::Path;
 extern crate savefile;
-use savefile::prelude::*;
 
 #[derive(Savefile)]
 pub struct Texture {
@@ -89,11 +88,8 @@ pub fn stack_horizontal(textures: Vec<Texture>) -> Texture {
     let mut channel;
     let mut total_width = 0;
     let mut max_height = textures[0].height;
-    //let mut current_col_start = 0;
     let sample = &textures[0];
-    //let width = sample.width;
     let texture_count = textures.len();
-    
     let depth = sample.depth;
     
     while texture < texture_count {
@@ -110,7 +106,7 @@ pub fn stack_horizontal(textures: Vec<Texture>) -> Texture {
         while texture < texture_count {
             column = 0;
             let current_width = textures[texture].width;
-            if (textures[texture].height >= height - row) {
+            if textures[texture].height >= height - row {
                 let row_offset = height - textures[texture].height;
                 while column < current_width {
                     channel = 0;
@@ -130,8 +126,6 @@ pub fn stack_horizontal(textures: Vec<Texture>) -> Texture {
                     column += 1;
                 }
             }
-            
-            //current_col_start += textures[texture].width;
             texture += 1;
         }
         row += 1;
@@ -162,7 +156,6 @@ fn premultiply(img: &mut [u8], depth: usize, alpha: AlphaChannel) {
                 for component in px[0..(depth - 1)].iter_mut() {
                     *component = (*component as f32 * a) as u8;
                 }
-                // already rgba8888
             }
         }
     }

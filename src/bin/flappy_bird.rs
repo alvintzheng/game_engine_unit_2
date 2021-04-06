@@ -14,7 +14,6 @@ use rand::{thread_rng, Rng};
 
 
 
-//use unit2::lib::*;
 use unit2::screen::Screen;
 use unit2::texture::Texture;
 use unit2::texture::stack_horizontal;
@@ -30,7 +29,7 @@ use unit2::tiles::TILE_SZ;
 extern crate savefile;
 use savefile::prelude::*;
 
-#[macro_use]
+
 extern crate savefile_derive;
 
 // seconds per frame
@@ -39,14 +38,10 @@ const DT: f64 = 1.0 / 60.0;
 const DEPTH: usize = 4;
 const WIDTH: usize = 800;
 const HEIGHT: usize = 500;
-//const PITCH: usize = WIDTH * DEPTH;
 
-// We'll make our Color type an RGBA8888 pixel.
-//type Color = [u8; DEPTH];
 
 const CLEAR_COL: Rgba = Rgba(0, 0, 0, 0);
-//const WALL_COL: Color = [200, 200, 200, 255];
-//const PLAYER_COL: Color = [255, 255, 0, 255];
+
 
 const OBSTACLE_SPACING: u16 = 250;
 const OBSTACLE_WIDTH: u16 = 30;
@@ -56,8 +51,6 @@ const OBSTACLE_MAX_HEIGHT: u16 = (HEIGHT - GAP_HEIGHT) as u16 - OBSTACLE_MIN_HEI
 const OBSTACLE_SPEED: u16 = 4;
 const MIN_OBSTACLES: usize = (WIDTH / (OBSTACLE_SPACING + OBSTACLE_WIDTH) as usize) * 2 + 1;
 const BACKGROUND_SPEED: u16 = 1;
-//const MAP_WIDTH: usize = WIDTH / tiles::TILE_SZ + 1;
-//const MAP_HEIGHT: usize = HEIGHT / tiles::TILE_SZ + 1;
 const MAP_WIDTH: usize = WIDTH / TILE_SZ + 1;
 const MAP_HEIGHT: usize = HEIGHT / TILE_SZ + 1;
 const MAP_SIZE: usize = MAP_WIDTH * MAP_HEIGHT;
@@ -95,7 +88,6 @@ struct GameData {
     sky_tex: Rc<Texture>,
     highscore: usize,
     sound_on: bool,
-    // should not use hashmap? because result of get() will be option?
 }
 
 impl Mode {
@@ -130,12 +122,11 @@ impl Mode {
                     if data.highscore < state.score {
                         data.highscore = state.score;
                     }
-                    ///////////////////////////////////////
-                    save_data(data.highscore, data.sound_on);
-                    // let reloaded_data = load_data();
-                    // data.highscore = reloaded_data; 
 
-                    Mode::EndGame // should be endgame
+                    //save data to file
+                    save_data(data.highscore, data.sound_on);
+
+                    Mode::EndGame
                 }
                 else if input.key_pressed(VirtualKeyCode::Space) {
                     Mode::Play(!paused)
@@ -241,12 +232,12 @@ impl Mode {
                 let to_pos_play = Vec2i((WIDTH - play_tex.width) as i32 / 2, (HEIGHT - play_tex.height) as i32 / 3 * 2);
                 screen.bitblt(&play_tex, from_rect_play, to_pos_play);
             }
-            Mode::Play(paused) => {
+            Mode::Play(_paused) => {
                 // Call screen's drawing methods to render the game state
                 screen.clear(Rgba(80, 80, 80, 255));
 
                 //draw each tilemap in vector to screen
-                draw_game(state, data, screen);
+                draw_game(state, screen);
             }
             Mode::Options => {
                 screen.clear(Rgba(0, 0, 0, 255));
@@ -289,7 +280,7 @@ impl Mode {
             }
             Mode::EndGame => { // Draw game result?
                 screen.clear(Rgba(255, 255, 80, 255));
-                draw_game(state, data, screen);
+                draw_game(state, screen);
             }
         }
     }
@@ -338,17 +329,11 @@ fn main() {
     game_sound.add_sound("die".to_string(), "./res/die.mp3".to_string());
 
     let mut mode = Mode::Title;
-    let mut font:&[u8];// = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
-
-    //if cfg!(target_os = "windows") {
-        //font = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
-    //  } else {
-        //font = include_bytes!("../res/Exo2-Regular.ttf") as &[u8];
-    //  }
+    let font:&[u8];// = include_bytes!("..\\res\\Exo2-Regular.ttf") as &[u8];
     
-    //Mac
+    ///////Mac
     font = include_bytes!("../../res/Exo2-Regular.ttf");
-    //Windows
+    ///////Windows
     //font = include_bytes!("..\\..\\res\\Exo2-Regular.ttf") as &[u8];
 
     let settings = fontdue::FontSettings {
@@ -358,9 +343,7 @@ fn main() {
     let font = fontdue::Font::from_bytes(font, settings).unwrap();
 
     let (highscore, sound_on) = load_data();
-    //let (highscore, sound_on) = (0, true);
-    //let reloaded_data = 0;
-    //data.highscore = reloaded_data; 
+
 
     let mut data = GameData {
         obstacle_tex_up: obstacle_tex_up,
@@ -378,12 +361,10 @@ fn main() {
     let mut state = new_game(&data);
     let camera_position = Vec2i(0,0);
 
-    // How many frames have we simulated?
-    let mut frame_count: usize = 0;
+
     // How many unsimulated frames have we saved up?
     let mut available_time = 0.0;
-    // Track beginning of play
-    let start = Instant::now();
+
 
     // Track end of the last frame
     let mut since = Instant::now();
@@ -410,7 +391,6 @@ fn main() {
         }
         // Handle input events
         if input.update(event) {
-            //println!("input");
             // Close events
             if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
                 *control_flow = ControlFlow::Exit;
@@ -426,9 +406,6 @@ fn main() {
             // Eat up one frame worth of time
             available_time -= DT;
             mode = mode.update(&mut state, &mut data, &input);
-
-            // Increment the frame counter
-            frame_count += 1;
         }
         // Request redraw
         window.request_redraw();
@@ -436,7 +413,7 @@ fn main() {
     });
 }
 
-fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
+fn draw_game(state: &mut GameState, screen: &mut Screen) {
     // Call screen's drawing methods to render the game state
     screen.clear(Rgba(80, 80, 80, 255));
 
@@ -447,8 +424,8 @@ fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
     for obs in state.obstacles.iter_mut() {
         screen.draw_entity(obs);
     }
-    //draw score
     
+    //draw score
     let score_rect = Rect{x: (WIDTH / 2 - 70) as i32, y: 0, w: 160, h: 30};
     screen.rect(score_rect, Rgba(0, 0, 0,255));
     screen.rect_outline(score_rect, Rgba(255, 255, 100, 255));
@@ -468,13 +445,12 @@ fn draw_game(state: &mut GameState, data: &mut GameData, screen: &mut Screen) {
 fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameData) {
     let player = &mut state.player.body.hitbox;
     // Determine player velocity
-    //let movespeed: i32 = 2;
     if input.key_held(VirtualKeyCode::Left) {
-        //player.vx = -1 * movespeed;
+
     } else if input.key_held(VirtualKeyCode::Right) {
-        //player.vx = 1 * movespeed;
+
     } else if input.key_pressed(VirtualKeyCode::Down) {
-        //player.vx = 0;
+
     } else {
         player.vx = 0;
     }
@@ -486,11 +462,9 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
             data.sound.play_sound("jump".to_string());
         }
         
-        //player.vy -= 40; //method 2
         state.player.wing.animations[0].current_frame = 0;
     } else {
         accel_down += 1;
-        //player.vy += 3; //method 2
         if accel_down > 1 {
             accel_down = 1;
         }
@@ -581,7 +555,6 @@ fn update_game(state: &mut GameState, input: &WinitInputHelper, data: &mut GameD
     player.update();
     
     // collisions
-
     for wall in state.walls.iter() {
         if rect_touching(wall.rect, player.rect) {
             state.finished = true;

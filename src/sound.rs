@@ -5,9 +5,7 @@ use kira::sound::SoundSettings;
 use kira::manager::AudioManagerSettings;
 use kira::manager::AudioManager;
 use kira::manager::error::SetupError;
-//use kira::CommandError;
-//use kira::instance::handle::InstanceHandle;
-use kira::manager::error::LoadSoundError;
+
 
 pub struct Sound {
     sound_map: HashMap<String, SoundHandle>,
@@ -42,7 +40,7 @@ impl Sound {
         }
     }
     pub fn play_sound(&mut self, name: String) {
-        let mut map_element = self.sound_map.get_mut(&name);
+        let map_element = self.sound_map.get_mut(&name);
         match map_element {
             Some(sound_handle) => {let _ = sound_handle.play(InstanceSettings::default());},
             None => println!("missing sound"), 

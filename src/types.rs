@@ -18,5 +18,3 @@ pub struct Vec2i(pub i32,pub i32);
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug, Savefile)]
 pub struct Rgba(pub u8, pub u8, pub u8, pub u8);
-
-// Feel free to add impl blocks with convenience functions

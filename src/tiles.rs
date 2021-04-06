@@ -3,7 +3,6 @@ use crate::types::{Rect, Vec2i};
 use crate::screen::{Screen};
 use std::rc::Rc;
 extern crate savefile;
-use savefile::prelude::*;
 
 pub const TILE_SZ: usize = 16;
 
@@ -25,9 +24,8 @@ pub struct Tileset {
     // Tile size is a constant, so we can find the tile in the texture using math
     // (assuming the texture is a grid of tiles).
     pub tiles: Vec<Tile>,
-    pub texture: Rc<Texture>, //////changed to pub
-                              // In this design, each tileset is a distinct image.
-                              // Maybe not always the best choice if there aren't many tiles in a tileset!
+    pub texture: Rc<Texture>, 
+                              
 }
  /// Indices into a Tileset
 #[derive(Clone, Copy, PartialEq, Eq, Savefile)]
@@ -102,9 +100,9 @@ impl Tilemap {
             map: map.into_iter().map(TileID).collect(),
         }
     }
+
     //input: window coordinates
     //output: TileID - type of tile at that position in the map
-
     pub fn tile_id_at(&self, Vec2i(x, y): Vec2i) -> TileID {
 
             // Translate into map coordinates
@@ -147,7 +145,7 @@ impl Tilemap {
             y,
             self.dims.1
         );
-        (y as usize + x as usize)
+        y as usize + x as usize
     }
 
     pub fn size(&self) -> (usize, usize) {
@@ -161,9 +159,8 @@ impl Tilemap {
     }
 
     pub fn set_tile_at(&mut self, Vec2i(x, y): Vec2i, id: usize) {
-        //pub fn set_tile_at(mut self, Vec2i(x, y): Vec2i, id: usize) {
         // Translate into map coordinates
-        let x = (x - self.position.0) / SZ as i32; //32 coordinates per tile
+        let x = (x - self.position.0) / SZ as i32;
         let y = (y - self.position.1) / SZ as i32;
         println!("x: {}, y: {})", x, y);
 
@@ -183,7 +180,6 @@ impl Tilemap {
         self.map[y as usize * self.dims.0 + x as usize] = TileID(id); //self.dims.0 = 12
     }
 
-    //from Slack comments
     pub fn draw(&self, screen: &mut Screen) {
         let Rect {
             x: sx,
@@ -227,7 +223,6 @@ impl Tilemap {
                 let xpx = (x * TILE_SZ) as i32 + self.position.0;
                 let frame = self.tileset.get_rect(*id);
 
-                ///////////////bitblt from screen.rs called here
                 screen.bitblt(&self.tileset.texture, frame, Vec2i(xpx, ypx));
             }
         }

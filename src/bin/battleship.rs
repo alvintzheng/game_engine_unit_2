@@ -3,7 +3,7 @@ use std::path::Path;
 use std::rc::Rc;
 use std::time::Instant;
 use winit::dpi::LogicalSize;
-use winit::event::{Event, MouseButton, VirtualKeyCode, WindowEvent};
+use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
@@ -17,7 +17,6 @@ extern crate savefile_derive;
 
 
 use unit2::screen::Screen;
-use unit2::collision::*;
 use unit2::texture::Texture;
 use unit2::types::*;
 use unit2::tiles::*;
@@ -83,12 +82,11 @@ impl Mode {
                 if input.key_pressed(VirtualKeyCode::P) {
                     Mode::Play(Turn::Human)
                 } else if input.key_pressed(VirtualKeyCode::Q) {
-                    //Mode::EndGame
-                    panic!();
+                    Mode::EndGame
                 } else if input.key_pressed(VirtualKeyCode::O) {
-                        Mode::Options
+                    Mode::Options
                 }else if input.key_pressed(VirtualKeyCode::R) {
-                        Mode::Reset
+                    Mode::Reset
                 } else {
                     self
                 }
@@ -117,7 +115,6 @@ impl Mode {
                             Mode::Reset
                         }else if input.mouse_pressed(0) {
                             
-                            //println!("human's turn");
 
                             let xcoor = input.mouse().unwrap().0 as i32;
                             let ycoor = input.mouse().unwrap().1 as i32;
@@ -127,7 +124,6 @@ impl Mode {
                             if game.tilemaps[0].tile_at(Vec2i(xcoor, ycoor)).opphit {
                                 data.sound.play_sound("hit".to_string());
                                 game.compsunk = game.compsunk + 1;
-                                //println!("compsunk: {}", game.compsunk);
                                 game.tilemaps[0].set_tile_at(Vec2i(xcoor, ycoor), 8); //hit opponent
                             } else { //missed
                                 data.sound.play_sound("splash".to_string());
@@ -137,9 +133,7 @@ impl Mode {
                             save_game(&game);
                             let reloaded_game = load_game();
                             *game = reloaded_game; 
-                            //assert_eq!(reloaded_game.name,"Steve".to_string());
 
-                            
                             Mode::Play(Turn::Computer)
                             
                         }
@@ -149,18 +143,9 @@ impl Mode {
                     }
                     Turn::Computer => {
 
-                        ///////////// width of screen: 1-384
-                        ///////////// height of screen: 128-384
+                        // width of screen: 1-384
+                        // height of screen: 128-384
 
-                        //Mac:
-                        //let xcompguess = thread_rng().gen_range(1, WIDTH+191) as i32; //1-383
-                        //let ycompguess = thread_rng().gen_range(HEIGHT/2+1, HEIGHT+127) as i32; //128-383
-
-                        //Windows:
-                        //let xcompguess = thread_rng().gen_range(1, WIDTH) as i32; //1-192
-                        //let ycompguess = thread_rng().gen_range(SHEIGHT, HEIGHT) as i32; //128-256
-  
-                        //both
                         let xcompguess = thread_rng().gen_range(1, XMAX-1) as i32; //Mac: XMAX=384, Windows: XMAX=192
                         let ycompguess = thread_rng().gen_range(HEIGHT/2, YMAX-1) as i32; //Mac: YMAX=384, Windows: YMAX=256
 
@@ -168,7 +153,6 @@ impl Mode {
                         if game.tilemaps[1].tile_at(Vec2i(xcompguess, ycompguess)).myship {
                             data.sound.play_sound("hit".to_string());
                             game.humansunk = game.humansunk + 1;
-                            //println!("humansunk: {}", game.humansunk);
                             game.tilemaps[1].set_tile_at(Vec2i(xcompguess, ycompguess), 4); //hit human's ship
                             Mode::Play(Turn::Human)
 
@@ -209,7 +193,7 @@ impl Mode {
                 }else if input.key_pressed(VirtualKeyCode::R) {
                     Mode::Reset
                 }else if input.key_pressed(VirtualKeyCode::P) {
-                    Mode::Play(Turn::Human) //need to track and save turn and what the board looks like
+                    Mode::Play(Turn::Human)
                 } else {
                     self
                 }
@@ -375,7 +359,7 @@ impl Mode {
     fn display(&self, game: &GameState, data: &mut GameData, screen: &mut Screen) {
         match self {
             Mode::Title => {
-                //draw a (static?) title
+                //draw a title
                 screen.clear(Rgba(80, 80, 80, 255));
                 let display_rect = Rect {
                     x: 0,
@@ -385,7 +369,7 @@ impl Mode {
                 };
                 screen.bitblt(&game.title_image, display_rect, Vec2i(0, 0));
             }
-            Mode::Play(pm) => {
+            Mode::Play(_pm) => {
                 // Call screen's drawing methods to render the game state
                 screen.clear(Rgba(80, 80, 80, 255));
 
@@ -420,7 +404,6 @@ impl Mode {
                 screen.clear(Rgba(0, 0, 0, 255));
 
                 let highscore_tex = create_text_tex(&data.font, "TALLY".to_string());
-                // todo: change stack_horizontal to fill space rather than take shortest character
                 let from_rect = Rect{x: 0, y: 0, w: highscore_tex.width as u16, h: highscore_tex.height as u16};
                 let to_pos = Vec2i((WIDTH - highscore_tex.width) as i32 / 2, (HEIGHT - highscore_tex.height) as i32 / 4);
                 screen.bitblt(&highscore_tex, from_rect, to_pos);
@@ -438,8 +421,8 @@ impl Mode {
             Mode::Reset => {
                 screen.clear(Rgba(0, 0, 0, 255));
             }
-            Mode::EndGame => { // Draw game result?
-                screen.clear(Rgba(255, 255, 80, 255));
+            Mode::EndGame => { //
+                screen.clear(Rgba(0, 0, 0, 255));
             }
             Mode::WonGame => { 
                 screen.clear(Rgba(0, 0, 0, 255));
@@ -469,7 +452,6 @@ fn load_game() -> GameState {
 
 fn main() {
     
-    
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
@@ -495,7 +477,7 @@ fn main() {
     game_sound.add_sound("splash".to_string(), "./res/splash.mp3".to_string());
 
     //font
-    let mut font:&[u8];
+    let font:&[u8];
     //Mac
     font = include_bytes!("../../res/Exo2-Regular.ttf");
     //Windows
@@ -513,9 +495,9 @@ fn main() {
     let title_image = Rc::new(Texture::with_file(Path::new("./res/logo.png")));
 
     //create Tileset from tileset.png image
-    let boattileset = Rc::new(Tileset {
+    let _boattileset = Rc::new(Tileset {
         tiles: vec![
-            //image comprises 16 tiles
+            //spritesheet comprises 16 tiles
             Tile {
                 oppgrid: true,
                 opphit: false,
@@ -605,25 +587,18 @@ fn main() {
     let mut state = load_game();
     state.title_image = title_image;
 
-    // How many frames have we simulated?
-    let mut frame_count: usize = 0;
     // How many unsimulated frames have we saved up?
     let mut available_time = 0.0;
-    // Track beginning of play
-    let start = Instant::now();
     // Track end of the last frame
     let mut since = Instant::now();
     let camera_position = Vec2i(0,0);
     event_loop.run(move |event, _, control_flow| {
-
 
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
             let mut screen = Screen::wrap(pixels.get_frame(), WIDTH, HEIGHT, DEPTH, camera_position);
             screen.clear(Rgba(0, 0, 0, 0));
 
-            // change to draw game using state and mode, i.e. mode.draw_game(state)
-            //draw_game(&state, &mut screen);
             mode.display(&state, &mut data, &mut screen);
 
             // Flip buffers
@@ -652,19 +627,12 @@ fn main() {
         while available_time >= DT {
             // Eat up one frame worth of time
             available_time -= DT;
-
-            // change to use mode
-            //update_game(&mut state, &input, frame_count);
             mode = mode.update(&mut state, &mut data, &input);
-            // Increment the frame counter
-            frame_count += 1;
         }
         // Request redraw
         window.request_redraw();
         // When did the last frame end?
         since = Instant::now();
-
-
     });
 }
 
