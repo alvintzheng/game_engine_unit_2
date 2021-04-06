@@ -6,10 +6,10 @@ extern crate savefile;
 
 pub const TILE_SZ: usize = 16;
 
-//Windows:
-//pub const SZ: usize = 16;
+Windows & Linux:
+pub const SZ: usize = 16;
 //Mac:
-pub const SZ: usize = 32;
+//pub const SZ: usize = 32;
 
 /// A graphical tile, we'll implement Copy since it's tiny
 #[derive(Clone, Copy, Savefile)]
@@ -121,10 +121,10 @@ impl Tilemap {
                 y,
                 self.dims.1
             ); 
-            ///////Windows
-            //self.map[y as usize * self.dims.0 + x as usize]
+            ///////Windows & Linux
+            self.map[y as usize * self.dims.0 + x as usize]
             ///////Mac:
-            self.map[y as usize + x as usize]
+            //self.map[y as usize + x as usize]
 
     }
     //input: window coordinates

@@ -47,11 +47,11 @@ const HEIGHT: usize = 16*16; //256
 const DEPTH: usize = 4;
 
 ///////////Mac: 
-const XMAX: usize = 384;
-const YMAX: usize = 384;
-//////////Windows: 
-//const XMAX: usize = 192;
-//const YMAX: usize = 256;
+//const XMAX: usize = 384;
+//const YMAX: usize = 384;
+//////////Windows & Linux: 
+const XMAX: usize = 192;
+const YMAX: usize = 256;
 
 //8 squares H by 12 squares W
 
